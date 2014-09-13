@@ -155,7 +155,7 @@
         font-family:'Roboto', Helvetica, Arial;
         font-weight:300;
         color:white;   
-        font-size:0.9em;
+        font-size:1em;
         opacity:0.5;
         letter-spacing:0.05em;
        right:430px;
@@ -184,6 +184,10 @@
             background:#189F4D;
         }
 
+        .run-botton .run-active {
+            background:#189F4D;
+        }
+
         .commit-button:hover {
             background:#D89A3C;
         }
@@ -207,6 +211,8 @@
             margin-top:2px;
             margin-left:10px;
         }
+
+
 
 
 /*----- Add files button ------------*/
