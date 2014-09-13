@@ -64,7 +64,7 @@
             <p>Saved at 11:34</p>
         </div>
 
-        <a href=""><div class="run-button">
+        <a href=""><div class="run-button" id="run-button">
             <p>Run<img src="http://www.radiobilly.com/wp-content/themes/radiobilly/img/play-white.png"></p>
            
         </div></a>
@@ -138,12 +138,13 @@ function add() {
     scroll()
 }
 
-
-
 var themes = require("ace/ext/themelist").themes.map(function(t){return t.theme});
 
 window.add = add;
 window.scroll = scroll;
+
+// lol state machine
+currentRepo = null;
 
 function listRepositories() {
   $.ajax({
@@ -209,10 +210,34 @@ function addRepository(url, callback) {
     },
     success: function (response) {
       callback(null, response);
+      currentRepo = response.id;
     },
     dataType: 'json'
   });
 };
+
+
+$('#run-button').on('click', function (event) {
+  var button = $(event.target).children('p').first();
+  console.log(button);
+  button.text("building...");
+  buildRepository(currentRepo, function (err) {
+    if (err) {
+      button.text("build failed");
+    } else {
+      
+    }
+  });
+  runRepository(currentRepo, function (err) {
+    if (err) {
+      button.text("failed");
+    } else {
+      button.text("running");
+    }
+  });
+  return false;
+});
+
 
 window.onload = function () {
 
