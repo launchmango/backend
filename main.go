@@ -119,10 +119,11 @@ func createRepo(w http.ResponseWriter, r *http.Request) {
 
 func getRepo(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-	//if !fileExists(id) {
-	//w.WriteHeader(http.StatusNotFound)
-	//return
-	//}
+
+	if !fileExists(id) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
 	visitFunc := func(path string, f os.FileInfo, err error) error {
 		if !strings.Contains(path, "/") { // hacky way of not including parent
