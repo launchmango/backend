@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime/debug"
 	"strings"
 
@@ -28,6 +29,7 @@ const (
 var (
 	errNotFound = &httputil.HTTPError{http.StatusNotFound,
 		errors.New("not found")}
+	regexpMD5 = regexp.MustCompile("[0-9a-f]{32}")
 )
 
 type FileNode struct {
@@ -40,7 +42,7 @@ type FileNode struct {
 type Repository struct {
 	ID    string    `json:"id"`
 	URL   string    `json:"url"`
-	Files *FileNode `json:"files"`
+	Files *FileNode `json:"files,omitempty"`
 }
 
 type handler func(w http.ResponseWriter, r *http.Request) error
@@ -169,6 +171,7 @@ func main() {
 	r.HandleFunc("/", handleRoot).Methods("GET")
 	r.Handle("/repositories/{id}/files/{path}", handler(getRepoFile)).Methods("GET")
 	r.Handle("/repositories", handler(createRepo)).Methods("POST")
+	r.Handle("/repositories", handler(listRepos)).Methods("GET")
 	r.Handle("/repositories/{id}", handler(getRepo)).Methods("GET")
 	r.Handle("/repositories/{id}", handler(deleteRepo)).Methods("DELETE")
 	r.Handle("/repositories/{id}/build", handler(buildRepo)).Methods("POST")
@@ -196,8 +199,8 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func createRepo(w http.ResponseWriter, r *http.Request) error {
-	defer r.Body.Close()
 	var repo Repository
+	defer r.Body.Close()
 	if err := json.NewDecoder(r.Body).Decode(&repo); err != nil {
 		return &httputil.HTTPError{http.StatusBadRequest, err}
 	}
@@ -220,6 +223,38 @@ func createRepo(w http.ResponseWriter, r *http.Request) error {
 	loadRepoFiles(&repo)
 
 	return renderJSON(w, http.StatusOK, &repo)
+}
+
+func listRepos(w http.ResponseWriter, r *http.Request) error {
+	repos := []*Repository{}
+
+	d, err := os.Open(".")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer d.Close()
+	fi, err := d.Readdir(-1)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	for _, fi := range fi {
+		if fi.Mode().IsDir() {
+			if regexpMD5.MatchString(fi.Name()) {
+				cmd := exec.Command("git", "config", "--get", "remote.origin.url")
+				cmd.Dir = fi.Name()
+				u, err := cmd.Output()
+				if err != nil {
+					return err
+				}
+
+				repos = append(repos, &Repository{ID: fi.Name(), URL: string(u)})
+			}
+		}
+	}
+
+	return renderJSON(w, http.StatusOK, repos)
 }
 
 func getRepo(w http.ResponseWriter, r *http.Request) error {
