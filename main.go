@@ -60,10 +60,22 @@ func renderJSON(w http.ResponseWriter, status int, v interface{}) error {
 
 func main() {
 	r := mux.NewRouter()
+	r.HandleFunc("/", handleRoot).Methods("GET")
 	r.HandleFunc("/repositories", createRepo).Methods("POST")
 	r.HandleFunc("/repositories/{id}", getRepo).Methods("GET")
+	http.Handle("/static/", http.StripPrefix("/static/",
+		http.FileServer(http.Dir("./static/"))))
 	http.Handle("/", r)
 	http.ListenAndServe(":3000", nil)
+}
+
+func handleRoot(w http.ResponseWriter, r *http.Request) {
+	file, err := os.Open("./index.html")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	io.Copy(w, file)
 }
 
 func createRepo(w http.ResponseWriter, r *http.Request) {
