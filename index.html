@@ -23,15 +23,18 @@
         
 
          <ul id="projects">
-            <li ><a href="">freya-on-a-mac</a></li>
-             <li ><a href="">hackerchat</a><ul>
-                <li><a href="">filename.eorj</a></li>
-                <li><a class="active" href="">filename.name</a></li>
-                <li><a href="">noidea.js</a><ul>
+            <li><a href="">freya-on-a-mac</a></li>
+            
+            <li >hackerchat
+                <ul>
                 <li><a href="">filename.eorj</a></li>
                 <li><a href="">filename.name</a></li>
+                <li>noidea.js
+                    <ul>
+                    <li><a href="">filename.eorj</a></li>
+                <li><a href="">filename.name</a></li>
                 <li><a href="">noidea.js</a></li>
-            </ul></li>
+               </ul></li>
             </ul></li>
                 <li><a href="">PennAppsApps</a></li>
             </ul>
@@ -72,6 +75,10 @@
     </div>
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+
+<!-- load list code-->
+<script type="text/javascript" src="static/listCollapse.js"></script>
+
 
 <!-- load ace -->
 <script src="/static/ace/ace.js"></script>
@@ -142,7 +149,7 @@ window.scroll = scroll;
 
 
 var AddRepository = function(url) {
-    console.log("lol")
+    console.log('lol')
     $.ajax({
           type: "POST",
           url: 'localhost:3000/repositories',
@@ -156,6 +163,15 @@ var AddRepository = function(url) {
 
 
 
+window.onload = function () {
+
+  //choose one of these options
+
+  //option 2 - auto-child-collapse
+  compactMenu('projects',true,'&plusmn; ');
+
+}
+</script>
 
 
 
