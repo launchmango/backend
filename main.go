@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,14 +13,21 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/launchmango/backend/httputil"
 )
 
 const (
 	typeFile = "file"
 	typeDir  = "dir"
+)
+
+var (
+	errNotFound = &httputil.HTTPError{http.StatusNotFound,
+		errors.New("not found")}
 )
 
 type FileNode struct {
@@ -33,6 +41,61 @@ type Repository struct {
 	ID    string    `json:"id"`
 	URL   string    `json:"url"`
 	Files *FileNode `json:"files"`
+}
+
+type handler func(w http.ResponseWriter, r *http.Request) error
+
+func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if rv := recover(); rv != nil {
+			err := errors.New("handler panic")
+			logError(r, err, rv)
+			handleError(w, r, http.StatusInternalServerError, err, false)
+		}
+	}()
+	var rb httputil.ResponseBuffer
+	err := h(&rb, r)
+	if err == nil {
+		rb.WriteTo(w)
+	} else if e, ok := err.(*httputil.HTTPError); ok {
+		if e.Status >= 500 {
+			logError(r, err, nil)
+		}
+		handleError(w, r, e.Status, e.Err, true)
+	} else {
+		logError(r, err, nil)
+		handleError(w, r, http.StatusInternalServerError, err, false)
+	}
+}
+
+func logError(req *http.Request, err error, rv interface{}) {
+	if err != nil {
+		var buf bytes.Buffer
+		fmt.Fprintf(&buf, "Error serving %s: %v\n", req.URL, err)
+		if rv != nil {
+			fmt.Fprintln(&buf, rv)
+			buf.Write(debug.Stack())
+		}
+		log.Println(buf.String())
+	}
+}
+func handleError(resp http.ResponseWriter, req *http.Request,
+	status int, err error, showErrorMsg bool) {
+	var data struct {
+		Error struct {
+			Status  int    `json:"status"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	data.Error.Status = status
+	if showErrorMsg {
+		data.Error.Message = err.Error()
+	} else {
+		data.Error.Message = http.StatusText(status)
+	}
+	resp.Header().Set("Content-Type", "application/json; charset=utf-8")
+	resp.WriteHeader(status)
+	json.NewEncoder(resp).Encode(&data)
 }
 
 func md5String(s string) string {
@@ -104,13 +167,15 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleRoot).Methods("GET")
-	r.HandleFunc("/repositories/{id}/files/{path}", getRepoFile).Methods("GET")
-	r.HandleFunc("/repositories", createRepo).Methods("POST")
-	r.HandleFunc("/repositories/{id}", getRepo).Methods("GET")
-	r.HandleFunc("/repositories/{id}", deleteRepo).Methods("DELETE")
-	r.HandleFunc("/repositories/{id}/build", buildRepo).Methods("POST")
-	r.HandleFunc("/repositories/{id}/files/{path}", getRepoFile).Methods("GET")
-	r.HandleFunc("/repositories/{id}/files/{path}", setRepoFile).Methods("PUT")
+	r.Handle("/repositories/{id}/files/{path}", handler(getRepoFile)).Methods("GET")
+	r.Handle("/repositories", handler(createRepo)).Methods("POST")
+	r.Handle("/repositories/{id}", handler(getRepo)).Methods("GET")
+	r.Handle("/repositories/{id}", handler(deleteRepo)).Methods("DELETE")
+	r.Handle("/repositories/{id}/build", handler(buildRepo)).Methods("POST")
+	r.Handle("/repositories/{id}/files/{path}",
+		handler(getRepoFile)).Methods("GET")
+	r.Handle("/repositories/{id}/files/{path}",
+		handler(setRepoFile)).Methods("PUT")
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.Dir("./static/"))))
 	http.Handle("/", r)
@@ -129,78 +194,68 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, file)
 }
 
-func createRepo(w http.ResponseWriter, r *http.Request) {
+func createRepo(w http.ResponseWriter, r *http.Request) error {
 	defer r.Body.Close()
 	var repo Repository
 	if err := json.NewDecoder(r.Body).Decode(&repo); err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return &httputil.HTTPError{http.StatusBadRequest, err}
 	}
 
 	if repo.URL == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return &httputil.HTTPError{http.StatusBadRequest,
+			errors.New("url is required")}
 	}
 
 	repo.ID = md5String(repo.URL)
 	if fileExists(repo.ID) {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		return &httputil.HTTPError{http.StatusBadRequest,
+			errors.New("repo already exists")}
 	}
 
 	if err := runCmd("git", "clone", repo.URL, repo.ID); err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	loadRepoFiles(&repo)
 
-	renderJSON(w, http.StatusOK, &repo)
+	return renderJSON(w, http.StatusOK, &repo)
 }
 
-func getRepo(w http.ResponseWriter, r *http.Request) {
+func getRepo(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)["id"]
 	if !fileExists(id) {
-		w.WriteHeader(http.StatusNotFound)
-		return
+		return errNotFound
 	}
 
 	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
 	cmd.Dir = id
 	u, err := cmd.Output()
 	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	repo := Repository{ID: id, URL: string(u)}
 	loadRepoFiles(&repo)
 
 	renderJSON(w, http.StatusOK, &repo)
+	return nil
 }
 
-func deleteRepo(w http.ResponseWriter, r *http.Request) {
+func deleteRepo(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)["id"]
 	if !fileExists(id) {
-		w.WriteHeader(http.StatusNotFound)
-		return
+		return errNotFound
 	}
-
 	if err := os.RemoveAll(id); err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return err
 	}
+	return nil
 }
 
-func buildRepo(w http.ResponseWriter, r *http.Request) {
+func buildRepo(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)["id"]
 	if !fileExists(id) {
-		w.WriteHeader(http.StatusNotFound)
-		return
+		return errNotFound
 	}
 
 	buf := new(bytes.Buffer)
@@ -210,44 +265,39 @@ func buildRepo(w http.ResponseWriter, r *http.Request) {
 	cmd.Dir = id
 	err := cmd.Run()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Println(buf.String())
+		return err
 	}
+	return nil
 }
 
-func getRepoFile(w http.ResponseWriter, r *http.Request) {
+func getRepoFile(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)["id"]
 	path := mux.Vars(r)["path"]
 	filePath := fmt.Sprintf("%s/%s", id, path)
 	file, err := os.Open(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			w.WriteHeader(http.StatusNotFound)
-			return
+			return errNotFound
 		}
 
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	io.Copy(w, file)
+	return nil
 }
 
-func setRepoFile(w http.ResponseWriter, r *http.Request) {
+func setRepoFile(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)["id"]
 	path := mux.Vars(r)["path"]
 	filePath := fmt.Sprintf("%s/%s", id, path)
 	file, err := os.Open(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			w.WriteHeader(http.StatusNotFound)
-			return
+			return errNotFound
 		}
 
-		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return nil
 	}
 	defer file.Close()
 
@@ -255,4 +305,5 @@ func setRepoFile(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body) // TODO: stream this
 	f, _ := file.Stat()
 	ioutil.WriteFile(filePath, body, f.Mode())
+	return nil
 }
