@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -103,9 +104,12 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleRoot).Methods("GET")
+	r.HandleFunc("/repositories/{id}/files/{path}", getRepoFile).Methods("GET")
 	r.HandleFunc("/repositories", createRepo).Methods("POST")
 	r.HandleFunc("/repositories/{id}", getRepo).Methods("GET")
 	r.HandleFunc("/repositories/{id}/build", buildRepo).Methods("POST")
+	r.HandleFunc("/repositories/{id}/files/{path}", getRepoFile).Methods("GET")
+	r.HandleFunc("/repositories/{id}/files/{path}", setRepoFile).Methods("PUT")
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.Dir("./static/"))))
 	http.Handle("/", r)
@@ -195,4 +199,47 @@ func buildRepo(w http.ResponseWriter, r *http.Request) {
 		log.Println(buf.String())
 	}
 
+}
+
+func getRepoFile(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	path := mux.Vars(r)["path"]
+	filePath := fmt.Sprintf("%s/%s", id, path)
+	file, err := os.Open(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	io.Copy(w, file)
+}
+
+func setRepoFile(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	path := mux.Vars(r)["path"]
+	filePath := fmt.Sprintf("%s/%s", id, path)
+	file, err := os.Open(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	defer r.Body.Close()
+	body, _ := ioutil.ReadAll(r.Body) // TODO: stream this
+	f, _ := file.Stat()
+	ioutil.WriteFile(filePath, body, f.Mode())
+	file.Write([]byte("FOOBAR"))
 }
