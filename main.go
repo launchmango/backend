@@ -281,7 +281,6 @@ func runRepo(w http.ResponseWriter, r *http.Request) error {
 	var projectName string
 	for _, f := range files {
 		if strings.HasSuffix(f.Name(), ".xcodeproj") {
-			fmt.Println(f.Name())
 			projectName = strings.TrimSuffix(f.Name(), ".xcodeproj")
 			break
 		}
