@@ -222,7 +222,7 @@ func createRepo(w http.ResponseWriter, r *http.Request) error {
 			errors.New("repo already exists")}
 	}
 
-	if err := runCmd("git", "clone", repo.URL, repo.ID); err != nil {
+	if err := runCmd("git", "clone", "--recursive", repo.URL, repo.ID); err != nil {
 		return err
 	}
 
@@ -296,14 +296,14 @@ func buildRepo(w http.ResponseWriter, r *http.Request) error {
 		return errNotFound
 	}
 
-	buf := new(bytes.Buffer)
 	cmd := exec.Command("xcodebuild", "-arch", "i386", "-sdk", "iphonesimulator")
-	cmd.Stdout = buf
-	cmd.Stderr = buf
+	cmd.Stdout = w
+	cmd.Stderr = w
 	cmd.Dir = id
 	err := cmd.Run()
 	if err != nil {
-		return err
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil
 	}
 	return nil
 }
