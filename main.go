@@ -191,9 +191,8 @@ func buildRepo(w http.ResponseWriter, r *http.Request) {
 	cmd.Dir = id
 	err := cmd.Run()
 	if err != nil {
-		fmt.Println(buf.String())
-		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(buf.String())
 	}
-	fmt.Println(buf.String())
 
 }
