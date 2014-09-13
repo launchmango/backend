@@ -86,8 +86,6 @@
 <script src="/static/ace/ext-themelist.js"></script>
 <script>
 
-
-var $ = document.getElementById.bind(document);
 var dom = require("ace/lib/dom");
 
 //add command to all new editor instaces
@@ -147,21 +145,18 @@ var themes = require("ace/ext/themelist").themes.map(function(t){return t.theme}
 window.add = add;
 window.scroll = scroll;
 
-
-var AddRepository = function(url) {
-    console.log('lol')
-    $.ajax({
-          type: "POST",
-          url: 'localhost:3000/repositories',
-            data: {url: url},
-            success: function(){},
-          dataType: 'json'
-        });
+function addRepository(url) {
+  $.ajax({
+    type: "POST",
+    url: 'localhost:3000/repositories',
+    data: {url: url},
+    error: function (jqXHR, textStatus, errorThrown) {
+      console.log(textStatus);
+      alert(textStatus);
+    },
+    dataType: 'json'
+  });
 };
-
-
-
-
 
 window.onload = function () {
 
@@ -172,11 +167,5 @@ window.onload = function () {
 
 }
 </script>
-
-
-
- </script>
-
-
 </body>
 </html>
