@@ -1,9 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/json"
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -26,13 +26,13 @@ type FileNode struct {
 	Type     string      `json:"type"`
 	Name     string      `json:"name"`
 	Size     int64       `json:"size"`
-	Children []*FileNode `json:"children"`
+	Children []*FileNode `json:"children,omitempty"`
 }
 
 type Repository struct {
-	ID    string      `json:"id"`
-	URL   string      `json:"url"`
-	Files []*FileNode `json:"files"`
+	ID    string    `json:"id"`
+	URL   string    `json:"url"`
+	Files *FileNode `json:"files"`
 }
 
 func md5String(s string) string {
@@ -43,7 +43,9 @@ func md5String(s string) string {
 
 func fileExists(filename string) bool {
 	if _, err := os.Stat("./" + filename); err != nil {
-	   return false
+		if os.IsNotExist(err) {
+			return false
+		}
 	}
 	return true
 }
@@ -53,6 +55,40 @@ func runCmd(name string, arg ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func loadRepoFiles(repo *Repository) {
+	var lastParent *FileNode
+	visitFunc := func(path string, f os.FileInfo, err error) error {
+		if strings.Contains(path, ".git") { // don't traverse git
+			return nil
+		}
+
+		fileType := "file"
+		if f.IsDir() {
+			fileType = "dir"
+		}
+
+		node := &FileNode{
+			Type: fileType,
+			Name: f.Name(),
+			Size: f.Size(),
+		}
+
+		if node.Type == "dir" && lastParent == nil {
+			lastParent = node
+			repo.Files = node
+		} else if node.Type == "dir" {
+			lastParent.Children = append(lastParent.Children, node)
+			lastParent = node
+		} else {
+			lastParent.Children = append(lastParent.Children, node)
+		}
+
+		return nil
+	}
+
+	filepath.Walk(repo.ID, visitFunc)
 }
 
 func renderJSON(w http.ResponseWriter, status int, v interface{}) error {
@@ -68,10 +104,13 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleRoot).Methods("GET")
+	r.HandleFunc("/repositories/{id}/files/{path}", getRepoFile).Methods("GET")
 	r.HandleFunc("/repositories", createRepo).Methods("POST")
 	r.HandleFunc("/repositories/{id}", getRepo).Methods("GET")
 	r.HandleFunc("/repositories/{id}/run", runRepo).Methods("GET")
 	r.HandleFunc("/repositories/{id}/build", buildRepo).Methods("POST")
+	r.HandleFunc("/repositories/{id}/files/{path}", getRepoFile).Methods("GET")
+	r.HandleFunc("/repositories/{id}/files/{path}", setRepoFile).Methods("PUT")
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.Dir("./static/"))))
 	http.Handle("/", r)
@@ -105,7 +144,7 @@ func createRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	repo.ID = md5String(repo.URL)
-	if !fileExists(repo.ID) {
+	if fileExists(repo.ID) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -116,35 +155,35 @@ func createRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	loadRepoFiles(&repo)
+
 	renderJSON(w, http.StatusOK, &repo)
 }
 
 func getRepo(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-
 	if !fileExists(id) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	visitFunc := func(path string, f os.FileInfo, err error) error {
-		if !strings.Contains(path, "/") { // hacky way of not including parent
-			return nil
-		}
-		if strings.Contains(path, ".git") { // don't traverse git
-			return nil
-		}
-
-		fmt.Printf("Visited: %s\n", path)
-		return nil
+	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
+	cmd.Dir = id
+	u, err := cmd.Output()
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
-	filepath.Walk(id, visitFunc)
+	repo := Repository{ID: id, URL: string(u)}
+	loadRepoFiles(&repo)
+
+	renderJSON(w, http.StatusOK, &repo)
 }
 
 func buildRepo(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-
 	if !fileExists(id) {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -190,4 +229,47 @@ func runRepo(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(buf.String())
 	}
+}
+
+func getRepoFile(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	path := mux.Vars(r)["path"]
+	filePath := fmt.Sprintf("%s/%s", id, path)
+	file, err := os.Open(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	io.Copy(w, file)
+}
+
+func setRepoFile(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	path := mux.Vars(r)["path"]
+	filePath := fmt.Sprintf("%s/%s", id, path)
+	file, err := os.Open(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	defer r.Body.Close()
+	body, _ := ioutil.ReadAll(r.Body) // TODO: stream this
+	f, _ := file.Stat()
+	ioutil.WriteFile(filePath, body, f.Mode())
+	file.Write([]byte("FOOBAR"))
 }
