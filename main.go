@@ -59,6 +59,11 @@ func renderJSON(w http.ResponseWriter, status int, v interface{}) error {
 }
 
 func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleRoot).Methods("GET")
 	r.HandleFunc("/repositories", createRepo).Methods("POST")
@@ -66,7 +71,7 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.Dir("./static/"))))
 	http.Handle("/", r)
-	http.ListenAndServe(":3000", nil)
+	http.ListenAndServe(":"+port, nil)
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
