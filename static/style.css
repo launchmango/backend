@@ -182,6 +182,7 @@
 
         .run-button:hover {
             background:#189F4D;
+            cursor:pointer;
         }
 
         .run-botton .run-active {
