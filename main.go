@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -69,6 +70,7 @@ func main() {
 	r.HandleFunc("/", handleRoot).Methods("GET")
 	r.HandleFunc("/repositories", createRepo).Methods("POST")
 	r.HandleFunc("/repositories/{id}", getRepo).Methods("GET")
+	r.HandleFunc("/repositories/{id}/run", runRepo).Methods("GET")
 	r.HandleFunc("/repositories/{id}/build", buildRepo).Methods("POST")
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.Dir("./static/"))))
@@ -149,7 +151,7 @@ func buildRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	buf := new(bytes.Buffer)
-	cmd := exec.Command("xcodebuild", "-sdk", "iphonesimulator")
+	cmd := exec.Command("xcodebuild", "-arch", "i386", "-sdk", "iphonesimulator")
 	cmd.Stdout = buf
 	cmd.Stderr = buf
 	cmd.Dir = id
@@ -158,5 +160,34 @@ func buildRepo(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(buf.String())
 	}
+}
 
+func runRepo(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+
+	if !fileExists(id) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	files, _ := ioutil.ReadDir("./" + id)
+	var projectName string
+	for _, f := range files {
+		if strings.HasSuffix(f.Name(), ".xcodeproj") {
+			fmt.Println(f.Name())
+			projectName = strings.TrimSuffix(f.Name(), ".xcodeproj")
+			break
+		}
+	}
+
+	buf := new(bytes.Buffer)
+	cmd := exec.Command("ios-sim", "launch", "build/Release-iphonesimulator/" + projectName + ".app")
+	cmd.Stdout = buf
+	cmd.Stderr = buf
+	cmd.Dir = id
+	err := cmd.Run()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(buf.String())
+	}
 }
