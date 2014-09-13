@@ -61,7 +61,7 @@
         </div>
 
         <div class="update">
-            <p>Saved at 11:34.</p>
+            <p>Saved at 11:34</p>
         </div>
 
         <a href=""><div class="run-button">
@@ -145,14 +145,70 @@ var themes = require("ace/ext/themelist").themes.map(function(t){return t.theme}
 window.add = add;
 window.scroll = scroll;
 
-function addRepository(url) {
+function listRepositories() {
   $.ajax({
-    type: "POST",
-    url: 'localhost:3000/repositories',
-    data: {url: url},
+    type: "GET",
+    url: '/repositories',
+    success: function (repositoriesJSON) {
+      repositories = JSON.parse(repositoriesJSON);
+      console.log(repositories);
+    },
     error: function (jqXHR, textStatus, errorThrown) {
       console.log(textStatus);
       alert(textStatus);
+    }
+  });
+};
+
+function buildRepository(id, callback) {
+  $.ajax({
+    type: "POST",
+    url: '/repositories/' + id + '/build',
+    success: function (response) {
+      callback(null, response);
+    },
+    error: function (jqXHR, textStatus) {
+      callback(textStatus);
+    }
+  });
+};
+
+function runRepository(id, callback) {
+  $.ajax({
+    type: "GET",
+    url: '/repositories/' + id + '/run',
+    success: function (response) {
+      callback(null, response);
+    },
+    error: function (jqXHR, textStatus) {
+      callback(textStatus);
+    }
+  });
+};
+
+function deleteRepository(id, callback) {
+  $.ajax({
+    type: 'DELETE',
+    url: '/repositories/' + id,
+    error: function (jqXHR, textStatus) {
+      callback(textStatus);
+    },
+    success: function (response) {
+      callback(null);
+    }
+  });
+};
+
+function addRepository(url, callback) {
+  $.ajax({
+    type: "POST",
+    url: '/repositories',
+    data: JSON.stringify({url: url}),
+    error: function (jqXHR, textStatus) {
+      callback(textStatus);
+    },
+    success: function (response) {
+      callback(null, response);
     },
     dataType: 'json'
   });
@@ -161,10 +217,9 @@ function addRepository(url) {
 window.onload = function () {
 
   //choose one of these options
-
   //option 2 - auto-child-collapse
-  compactMenu('projects',true,'&plusmn; ');
 
+  compactMenu('projects', true, '&#128194');
 }
 </script>
 </body>
