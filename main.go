@@ -71,7 +71,10 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.Dir("./static/"))))
 	http.Handle("/", r)
-	http.ListenAndServe(":"+port, nil)
+	err := http.ListenAndServe(":"+port, nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
