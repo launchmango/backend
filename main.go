@@ -172,6 +172,7 @@ func main() {
 	r.Handle("/repositories/{id}", handler(getRepo)).Methods("GET")
 	r.Handle("/repositories/{id}", handler(deleteRepo)).Methods("DELETE")
 	r.Handle("/repositories/{id}/build", handler(buildRepo)).Methods("POST")
+	r.Handle("/repositories/{id}/run", handler(runRepo)).Methods("GET")
 	r.Handle("/repositories/{id}/files/{path}",
 		handler(getRepoFile)).Methods("GET")
 	r.Handle("/repositories/{id}/files/{path}",
@@ -259,7 +260,36 @@ func buildRepo(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	buf := new(bytes.Buffer)
-	cmd := exec.Command("xcodebuild", "-sdk", "iphonesimulator")
+	cmd := exec.Command("xcodebuild", "-arch", "i386", "-sdk", "iphonesimulator")
+	cmd.Stdout = buf
+	cmd.Stderr = buf
+	cmd.Dir = id
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func runRepo(w http.ResponseWriter, r *http.Request) error {
+	id := mux.Vars(r)["id"]
+	if !fileExists(id) {
+		return errNotFound
+	}
+
+	files, _ := ioutil.ReadDir("./" + id)
+	var projectName string
+	for _, f := range files {
+		if strings.HasSuffix(f.Name(), ".xcodeproj") {
+			fmt.Println(f.Name())
+			projectName = strings.TrimSuffix(f.Name(), ".xcodeproj")
+			break
+		}
+	}
+
+	buf := new(bytes.Buffer)
+	cmd := exec.Command("ios-sim", "launch",
+		"build/Release-iphonesimulator/"+projectName+".app")
 	cmd.Stdout = buf
 	cmd.Stderr = buf
 	cmd.Dir = id
