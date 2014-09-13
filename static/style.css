@@ -7,23 +7,16 @@
 
          h2 {
             font-weight:400;
-            font-size:0.6em;
+            font-size:0.7em;
             text-transform:uppercase;
             letter-spacing:0.3em;
-            padding:20px;
+            padding:17px 20px;
             opacity:0.4;
              float:left;
              }
 
         h2 a {
-            font-weight:400;
-            font-size:0.6em;
-            text-transform:uppercase;
-            letter-spacing:0.3em;
-            padding:20px;
-            opacity:0.4;
-             float:left;
-             color:white;
+            color:white;
              text-decoration:none;
         }
 
@@ -59,19 +52,30 @@
     }
 
 
+    a h2 {
+         color:white;
+         text-decoration:none;
+    }
+
 
     .log-out {
         position:absolute;
-        bottom:105px;
+        bottom:65px;
         height:35px;
         background:rgb(45,45,45);
+        width:100%;
+        padding:0px 0px 15px 0px;
     }
+
+        .log-out:hover {
+            background:rgb(25,25,25);
+        }
 
 
  /*----- ul lists in sidebar ------------*/
       
 
-        ul {
+       ul {
             clear:both;
         }
 
@@ -248,3 +252,5 @@
                    color: white;
             background:#189F4D;
             }
+
+
