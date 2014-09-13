@@ -192,10 +192,7 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.Dir("./static/"))))
 	http.Handle("/", r)
-	err := http.ListenAndServe(":"+port, nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
