@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"encoding/json"
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -40,10 +41,10 @@ func md5String(s string) string {
 }
 
 func fileExists(filename string) bool {
-	if _, err := os.Stat(filename); err != nil {
-		return true
+	if _, err := os.Stat("./" + filename); err != nil {
+	   return false
 	}
-	return false
+	return true
 }
 
 func runCmd(name string, arg ...string) error {
@@ -68,6 +69,7 @@ func main() {
 	r.HandleFunc("/", handleRoot).Methods("GET")
 	r.HandleFunc("/repositories", createRepo).Methods("POST")
 	r.HandleFunc("/repositories/{id}", getRepo).Methods("GET")
+	r.HandleFunc("/repositories/{id}/build", buildRepo).Methods("POST")
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.Dir("./static/"))))
 	http.Handle("/", r)
@@ -135,4 +137,26 @@ func getRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filepath.Walk(id, visitFunc)
+}
+
+func buildRepo(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+
+	if !fileExists(id) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	buf := new(bytes.Buffer)
+	cmd := exec.Command("xcodebuild", "-sdk", "iphonesimulator")
+	cmd.Stdout = buf
+	cmd.Stderr = buf
+	cmd.Dir = id
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(buf.String())
+		log.Fatal(err)
+	}
+	fmt.Println(buf.String())
+
 }
