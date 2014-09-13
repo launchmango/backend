@@ -122,6 +122,16 @@ func runCmd(name string, arg ...string) error {
 	return cmd.Run()
 }
 
+func gitRemote(repoPath string) (string, error) {
+	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
+	cmd.Dir = repoPath
+	u, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return string(u), nil
+}
+
 func loadRepoFiles(repo *Repository) {
 	var lastParent *FileNode
 	visitFunc := func(path string, f os.FileInfo, err error) error {
@@ -242,14 +252,12 @@ func listRepos(w http.ResponseWriter, r *http.Request) error {
 	for _, fi := range fi {
 		if fi.Mode().IsDir() {
 			if regexpMD5.MatchString(fi.Name()) {
-				cmd := exec.Command("git", "config", "--get", "remote.origin.url")
-				cmd.Dir = fi.Name()
-				u, err := cmd.Output()
+				name, err := gitRemote(fi.Name())
 				if err != nil {
 					return err
 				}
 
-				repos = append(repos, &Repository{ID: fi.Name(), URL: string(u)})
+				repos = append(repos, &Repository{ID: fi.Name(), URL: name})
 			}
 		}
 	}
@@ -263,14 +271,12 @@ func getRepo(w http.ResponseWriter, r *http.Request) error {
 		return errNotFound
 	}
 
-	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
-	cmd.Dir = id
-	u, err := cmd.Output()
+	name, err := gitRemote(id)
 	if err != nil {
 		return err
 	}
 
-	repo := Repository{ID: id, URL: string(u)}
+	repo := Repository{ID: id, URL: name}
 	loadRepoFiles(&repo)
 
 	renderJSON(w, http.StatusOK, &repo)
