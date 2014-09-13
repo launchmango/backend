@@ -107,6 +107,7 @@ func main() {
 	r.HandleFunc("/repositories/{id}/files/{path}", getRepoFile).Methods("GET")
 	r.HandleFunc("/repositories", createRepo).Methods("POST")
 	r.HandleFunc("/repositories/{id}", getRepo).Methods("GET")
+	r.HandleFunc("/repositories/{id}", deleteRepo).Methods("DELETE")
 	r.HandleFunc("/repositories/{id}/build", buildRepo).Methods("POST")
 	r.HandleFunc("/repositories/{id}/files/{path}", getRepoFile).Methods("GET")
 	r.HandleFunc("/repositories/{id}/files/{path}", setRepoFile).Methods("PUT")
@@ -181,6 +182,20 @@ func getRepo(w http.ResponseWriter, r *http.Request) {
 	renderJSON(w, http.StatusOK, &repo)
 }
 
+func deleteRepo(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	if !fileExists(id) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if err := os.RemoveAll(id); err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
 func buildRepo(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	if !fileExists(id) {
@@ -198,7 +213,6 @@ func buildRepo(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(buf.String())
 	}
-
 }
 
 func getRepoFile(w http.ResponseWriter, r *http.Request) {
@@ -241,5 +255,4 @@ func setRepoFile(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body) // TODO: stream this
 	f, _ := file.Stat()
 	ioutil.WriteFile(filePath, body, f.Mode())
-	file.Write([]byte("FOOBAR"))
 }
