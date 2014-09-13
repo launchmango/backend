@@ -153,7 +153,7 @@
          position:absolute;
         top:38%;    
         font-family:'Roboto', Helvetica, Arial;
-        font-weight:300;
+        font-weight:400;
         color:white;   
         font-size:1em;
         opacity:0.5;
@@ -185,12 +185,13 @@
             cursor:pointer;
         }
 
-        .run-botton .run-active {
+        .run-active {
             background:#189F4D;
         }
 
         .commit-button:hover {
             background:#D89A3C;
+            cursor:pointer;
         }
 
     .run-button p, .commit-button p {
