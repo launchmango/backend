@@ -286,6 +286,8 @@ func runRepo(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
+	go runCmd("osascript", "trigger_move_simulator.scpt")
+
 	buf := new(bytes.Buffer)
 	cmd := exec.Command("ios-sim", "launch",
 		"build/Release-iphonesimulator/"+projectName+".app")
