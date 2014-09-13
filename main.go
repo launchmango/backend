@@ -179,7 +179,6 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleRoot).Methods("GET")
-	r.Handle("/repositories/{id}/files/{path}", handler(getRepoFile)).Methods("GET")
 	r.Handle("/repositories", handler(createRepo)).Methods("POST")
 	r.Handle("/repositories", handler(listRepos)).Methods("GET")
 	r.Handle("/repositories/{id}", handler(getRepo)).Methods("GET")
