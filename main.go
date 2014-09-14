@@ -240,6 +240,7 @@ func createRepo(w http.ResponseWriter, r *http.Request) error {
 			errors.New("url is required")}
 	}
 
+	repo.URL = repo.URL
 	repo.ID = md5String(repo.URL)
 	if fileExists(repo.ID) {
 		return &httputil.HTTPError{http.StatusBadRequest,
@@ -260,14 +261,12 @@ func listRepos(w http.ResponseWriter, r *http.Request) error {
 
 	d, err := os.Open(".")
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 	defer d.Close()
 	fi, err := d.Readdir(-1)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 	for _, fi := range fi {
 		if fi.Mode().IsDir() {
