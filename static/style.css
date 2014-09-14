@@ -318,26 +318,26 @@ div.console-output {
 
     #iphone {
         width: 377px;
-       z-index: 200;
+       z-index: 1200;
        position: absolute;
-       bottom: 50px;
+       bottom: 20px;
        right: 50px;
     }
             #simulator {
               width: 320px;
               height: 480px;
-              z-index: 300;
+              z-index: 1300;
               position: absolute;
-              bottom: 166px;
+              bottom: 146px;
               right: 75px;
             }
 
             #dismiss {
             width: 35px;
              right: 64px;
-             bottom: 719px;
+             bottom: 799px;
              position: absolute;
-             z-index: 400;
+             z-index: 1400;
               /*display:none;*/
             }
 
