@@ -177,8 +177,6 @@
 
 
 /*----- run/commit menu ------------*/
-
-
     .run-button, .commit-button {
         position:absolute;
         right:200px;
@@ -194,7 +192,7 @@
         background:rgba(0,0,0,0.4);
         }
 
-        .run-button:hover {
+        .no-touch .run-button:hover {
             background:#189F4D;
             cursor:pointer;
         }

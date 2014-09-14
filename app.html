@@ -19,35 +19,7 @@
        <a href="/"><div class="log-out"><h2>Log out</h2></div></a>
     </div>
 
-<pre id="editor">
-#import "AppDelegate.h"
-#import "ContentController.h"
- 
-@interface AppDelegate ()
-@property (nonatomic, strong) IBOutlet ContentController *contentController;
-@end
- 
-@implementation AppDelegate
- 
-- (void)applicationDidFinishLaunching:(UIApplication *)application
-{
-    _window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-    
-    // decide which kind of content we need based on the device idiom,
-    // when we load the proper nib, the "ContentController" class will take it from here
-    //
-    NSString *nibTitle = @"PadContent";
-    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone)
-    {
-        nibTitle = @"PhoneContent";
-    }
-    [[NSBundle mainBundle] loadNibNamed:nibTitle owner:self options:nil];
-    
-    [self.window makeKeyAndVisible];
-}
- 
-@end
-</pre>
+<pre id="editor"></pre>
 
 <div class="bottombar">
    <div class="logo">
@@ -55,11 +27,11 @@
     </div>
 
     <div class="update">
-      <p>Saved at 11:34</p>
+      <p></p>
     </div>
 
     <div class="run-button" id="run-button">
-      <p><span>Run</span><img src="http://www.radiobilly.com/wp-content/themes/radiobilly/img/play-white.png"></p>
+      <p><span>Run</span><img src="/static/img/play-white.png"></p>
     </div>
 
     <div class="commit-button", id="commit-button">
@@ -182,7 +154,7 @@ function getRepo(id, callback) {
 function getRepoFile(id, path, callback) {
   $.ajax({
     type: "GET",
-    url: '/repositories/' + id + 'files/' + path,
+    url: '/repositories/' + id + 'files' + path,
     success: function (repositories) {
       callback(null, repositories)
     },
@@ -210,10 +182,13 @@ function runRepository(id, callback) {
   $.ajax({
     type: "GET",
     url: '/repositories/' + id + '/run',
-    success: function (response) {
-      callback(null, response);
+    success: function (jqXHR) {
+      console.log(arguments);
+      appView.resetRunButton();
+      callback(null);
     },
     error: function (jqXHR, textStatus) {
+      
       callback(textStatus);
     }
   });
@@ -270,40 +245,26 @@ Handlebars.registerHelper('recursiveBitch', function(files) {
       str += "<li>";
       if (file.type === 'file') {
         // console.log(file.name, "is a file");
-        str += "<a href='#'>" + file.name + '</a>';
+        str += "<a href='#" + file.url + "'>" + file.name + '</a>';
       } else {
         // console.log(file.name, "is a directory");
-        str += "<a href='#'>" + '> ' + file.name + '</a>';
+        str += "<a href='#" + file.url + "'>" + '> ' + file.name + '</a>';
         // console.log(recurseDirectory(str, file.children));
       }
-      str += "</li></a>"
+      str += "</li></a>";
     });
     return str + "</ul>";
   }
 
   return recurseDirectory("", files.children);
 
-
-  // str = "";
-  // str += "<ul>";
-  // _.each(files.children, function (file) {
-  //   str += "<li><a>";
-  //   console.log(file);
-  //   if (file.type === 'file') {
-  //     console.log(file.name, "is a file");
-  //   } else {
-  //     console.log(file.name, "is a directory");
-  //     // recurse(file.children)
-  //   }
-  //   str += "</li></a>"
-  // });
-  // str += "</ul>";
-
 });
 
 var AppView = Backbone.View.extend({
   el: 'body',
   currentRepo: null,
+  currentFilePath: null,
+  // prevEditorValue = null,
   lastSaved: moment(),
   repos: [],
 
@@ -317,18 +278,29 @@ var AppView = Backbone.View.extend({
   initialize: function () {
     this.reposView = new ReposListView();
     var that = this;
+
     this.updateRepos(function() {
       that.render();
     });
-    setInterval(function () {
-      that.updateSavedAt();
-    }, 2500);
+
+    editor.on('change', _.debounce(function () {
+      that.saveCurrentFile();
+    }, 250));
+
+    // setInterval(function () {
+    //   that.saveCurrentFile();
+    // }, 2500);
   },
 
   render: function() {
-    $("#run-button").removeClass("build-fail");
-    $("#run-button").children('p').first().text("run")
     this.reposView.render();
+  },
+
+  resetRunButton: function () {
+    $("#run-button").removeClass("build-fail");
+    $("#run-button").removeClass("run-active");
+    $("#run-button").find('span').first().text("run");
+    $("#run-button").find('img').show();
   },
 
   updateRepos: function(callback) {
@@ -345,11 +317,12 @@ var AppView = Backbone.View.extend({
     console.log('run() called')
     if (!this.currentRepo) return;
 
-    var button = $("#run-button").children('p').first();
+    var button = $("#run-button").find('span').first();
 
     $("#run-button").addClass("run-active");
 
     button.text("building...");
+    $("#run-button").find('img').hide();
 
     var that = this;
     async.waterfall([
@@ -358,7 +331,7 @@ var AppView = Backbone.View.extend({
         buildRepository(that.currentRepo, next);
       },
 
-      function run(next) {
+      function run(info, next) {
         button.text("running...")
         runRepository(that.currentRepo, next);
       }
@@ -387,8 +360,22 @@ var AppView = Backbone.View.extend({
     alert("Commit not implemented!");
   },
 
-  updateSavedAt: function () {
-    $(".update > p").text("last saved " + this.lastSaved.from(moment()));
+  saveCurrentFile: function (callback) {
+    var that = this;
+   $.ajax({
+     type: "PUT",
+     url: this.currentFilePath,
+     data: editor.getValue(),
+     success: function () {
+       that.lastSaved = moment();
+       $(".update > p").text("last saved " + that.lastSaved.from(moment()));
+       callback(null);
+     },
+     error: function (jqXHR, textStatus) {
+      $(".update > p").html("<span style='color:black; font-weight:bold'>Save failed</span>")
+       callback(textStatus);
+     }
+   });
   }
 
 });
@@ -425,13 +412,23 @@ var ReposListView = Backbone.View.extend({
     this.$("a").removeClass("active");
     document.title = id;
     target.addClass("active");
-    window.appView.currentRepo = id;
+    appView.resetRunButton();
+    console.log(id);
+    if (id[0] === "/") {
+      $.get(id, function(data) {
+        editor.setValue(data, -1);
+      });
+      appView.currentFilePath = id;
+    } else {
+     window.appView.currentRepo = id;
+    }
   }
 
 });
 
 if ('ontouchstart' in document) {
   $('body').removeClass('no-touch');
+  $('body').css('cursor','pointer');
 }
 
 window.appView = new AppView();
