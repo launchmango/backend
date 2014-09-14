@@ -329,11 +329,11 @@ div.console-output {
             }
 
             #dismiss {
-              width:30px;
-              right:28px;
-              bottom:570px;
-              position:absolute;
-              z-index:400;
+            width: 35px;
+             right: 64px;
+             bottom: 719px;
+             position: absolute;
+             z-index: 400;
               /*display:none;*/
             }
 

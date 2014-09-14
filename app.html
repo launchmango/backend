@@ -364,8 +364,7 @@ var AppView = Backbone.View.extend({
       },
 
       function run(info, next) {
-        $('#iphone').show();
-        $('#dismiss').show();
+        $('#sim-container').show();
         button.text("running...")
         runRepository(that.currentRepo, next);
       }
@@ -390,13 +389,8 @@ var AppView = Backbone.View.extend({
     console.log('dismiss() called')
     if (!this.currentRepo) return;
 
-    $('#dismiss').hide();
-    $('#iphone').hide();
-    $("#run-button").removeClass("run-active");
-    $("#run-button").removeClass("build-fail");
+    $('#sim-container').hide();
     this.resetRunButton();
-
-
   },
 
 
