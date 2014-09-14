@@ -36,6 +36,7 @@ type FileNode struct {
 	Type     string      `json:"type"`
 	Name     string      `json:"name"`
 	Size     int64       `json:"size"`
+	URL      string      `json:"url,omitempty"`
 	Children []*FileNode `json:"children,omitempty"`
 }
 
@@ -82,6 +83,7 @@ func logError(req *http.Request, err error, rv interface{}) {
 		log.Println(buf.String())
 	}
 }
+
 func handleError(resp http.ResponseWriter, req *http.Request,
 	status int, err error, showErrorMsg bool) {
 	var data struct {
@@ -164,6 +166,11 @@ func loadRepoFiles(repo *Repository) {
 			Size: f.Size(),
 		}
 
+		if node.Type == "file" {
+			node.URL = fmt.Sprintf("/repositories/%s/files/%s", repo.ID,
+				strings.Join(strings.Split(path, "/")[1:], "/"))
+		}
+
 		if node.Type == "dir" && lastParent == nil {
 			lastParent = node
 			repo.Files = node
@@ -200,9 +207,9 @@ func main() {
 	r.Handle("/repositories/{id}", handler(deleteRepo)).Methods("DELETE")
 	r.Handle("/repositories/{id}/build", handler(buildRepo)).Methods("POST")
 	r.Handle("/repositories/{id}/run", handler(runRepo)).Methods("GET")
-	r.Handle("/repositories/{id}/files/{path}",
+	r.Handle("/repositories/{id}/files/{path:.+}",
 		handler(getRepoFile)).Methods("GET")
-	r.Handle("/repositories/{id}/files/{path}",
+	r.Handle("/repositories/{id}/files/{path:.+}",
 		handler(setRepoFile)).Methods("PUT")
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.Dir("./static/"))))
