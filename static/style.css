@@ -26,11 +26,11 @@
         position: relative !important;
         border: 0px solid lightgray;
         margin: auto;
-        height:93vh;
-        bottom:0;
+        bottom:0px;
         position:absolute;
         margin-left:300px;
         top:70px;
+        height:calc(100vh - 70px);
     }
 
 
