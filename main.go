@@ -33,11 +33,11 @@ var (
 )
 
 type FileNode struct {
-	Type     string      `json:"type"`
-	Name     string      `json:"name"`
-	Size     int64       `json:"size"`
-	URL      string      `json:"url,omitempty"`
-	Children []*FileNode `json:"children,omitempty"`
+	Type     string               `json:"type"`
+	Name     string               `json:"name"`
+	Size     int64                `json:"size"`
+	URL      string               `json:"url,omitempty"`
+	Children map[string]*FileNode `json:"children,omitempty"`
 }
 
 type Repository struct {
@@ -149,7 +149,7 @@ func repoName(repoPath string) (string, error) {
 }
 
 func loadRepoFiles(repo *Repository) {
-	var lastParent *FileNode
+	var first *FileNode
 	visitFunc := func(path string, f os.FileInfo, err error) error {
 		if strings.Contains(path, ".git") { // don't traverse git
 			return nil
@@ -158,14 +158,18 @@ func loadRepoFiles(repo *Repository) {
 		fileType := "file"
 		if f.IsDir() {
 			fileType = "dir"
-		} else {
-			fmt.Println(f.Name())
 		}
 
 		node := &FileNode{
-			Type: fileType,
-			Name: f.Name(),
-			Size: f.Size(),
+			Type:     fileType,
+			Name:     f.Name(),
+			Size:     f.Size(),
+			Children: make(map[string]*FileNode),
+		}
+
+		if first == nil {
+			first = node
+			return nil
 		}
 
 		if node.Type == "file" {
@@ -173,20 +177,38 @@ func loadRepoFiles(repo *Repository) {
 				strings.Join(strings.Split(path, "/")[1:], "/"))
 		}
 
-		if node.Type == "dir" && lastParent == nil {
-			lastParent = node
-			repo.Files = node
-		} else if node.Type == "dir" {
-			lastParent.Children = append(lastParent.Children, node)
-			lastParent = node
-		} else {
-			lastParent.Children = append(lastParent.Children, node)
+		parentPathParts := strings.Split(path, "/")[1:]
+		if len(parentPathParts) <= 1 {
+			first.Children[node.Name] = node
+			return nil
 		}
+		parentPathParts = parentPathParts[:len(parentPathParts)-1]
+		setDeepNode(first, parentPathParts, node)
 
 		return nil
 	}
 
 	filepath.Walk(repo.ID, visitFunc)
+	repo.Files = first
+}
+
+func setDeepNode(b *FileNode, keys []string, f *FileNode) {
+	v, ok := b.Children[keys[0]]
+	if ok && len(keys) > 1 {
+		setDeepNode(v, keys[1:], f)
+		return
+	}
+
+	if len(keys) == 1 {
+		b.Children[f.Name] = f
+	}
+}
+
+func printNode(f *FileNode, nesting int) {
+	for _, v := range f.Children {
+		fmt.Printf("%s%s - %s\n", strings.Repeat(" ", nesting), f.Name, v.Name)
+		printNode(v, nesting+2)
+	}
 }
 
 func renderJSON(w http.ResponseWriter, status int, v interface{}) error {
