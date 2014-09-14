@@ -179,7 +179,7 @@ function buildRepository(id, callback) {
       callback(null, response);
     },
     error: function (jqXHR, textStatus) {
-      callback(textStatus);
+      callback(jqXHR.responseText);
     }
   });
 };
@@ -227,6 +227,22 @@ function addRepository(url, callback) {
     dataType: 'json'
   });
 };
+
+var entityMap = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': '&quot;',
+    "'": '&#39;',
+    "/": '&#x2F;'
+  };
+
+
+function escapeHtml(string) {
+  return String(string).replace(/[&<>"'\/]/g, function (s) {
+    return entityMap[s];
+  });
+}
 
 Handlebars.registerHelper('recursiveBitch', function(files) {
   // console.log("CALLED ONE TIME");
@@ -344,6 +360,11 @@ var AppView = Backbone.View.extend({
       }
     ], function done(err) {
         if (err) {
+          console.log(err);
+          vex.dialog.alert({
+            input: "<pre>" + escapeHtml(err) + "</pre>",
+            contentClassName: "console-output"
+          });
           button.text("build failed");
           $("#run-button").removeClass("*");
           $("#run-button").addClass("build-fail");

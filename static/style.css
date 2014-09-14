@@ -2,6 +2,15 @@
         background: rgb(0,0,0);
     }
 
+div.console-output {
+    width:70% !important;
+    word-break: break-word !important;
+    font-size: 12px !important;
+    font-family: Monaco !important;
+    height: 100% !important;
+    overflow: scroll !important;
+}
+
     /*----- h2 ------------*/
         
 

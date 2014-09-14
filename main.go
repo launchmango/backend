@@ -158,6 +158,8 @@ func loadRepoFiles(repo *Repository) {
 		fileType := "file"
 		if f.IsDir() {
 			fileType = "dir"
+		} else {
+			fmt.Println(f.Name())
 		}
 
 		node := &FileNode{
