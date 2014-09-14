@@ -321,8 +321,8 @@ div.console-output {
         display:none;
     }
             #simulator {
-              width: 800px;
-              height: 640px;
+              width: 640px;
+              height: 480px;
               z-index: 200;
               position: absolute;
               bottom: 25px;
