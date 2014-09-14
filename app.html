@@ -12,11 +12,11 @@
 </head>
 <body>
   <div class="sidebar">
-      <h2>Your Repos</h2><div class="add-files"><a class="plus" href="">+</a><ul class="add-menu">
-          <li><a href="#" id="clone-repository">Clone Repository</a></li>
+      <h2>Projects</h2><div class="add-files"><a class="plus" href="">+</a><ul class="add-menu">
+          <li><a href="#" id="clone-repository">Add Repository</a></li>
            </ul></div>
 
-         <ul id="projects">
+         <ul id="repos">
             <li><a href="">freya-on-a-mac</a></li>
             
             <li >hackerchat
@@ -29,11 +29,11 @@
                 <li><a href="">filename.name</a></li>
                 <li><a href="">noidea.js</a></li>
                </ul></li>
-            </ul></li>
+              </ul></li>
                 <li><a href="">PennAppsApps</a></li>
-            </ul>
+          </ul>
 
-       <a href="/logout"><div class="log-out"><h2>Log out</h2></div></a>
+       <a href="/"><div class="log-out"><h2>Log out</h2></div></a>
     </div>
 
 <pre id="editor">
@@ -61,33 +61,57 @@ int main () {
       <p>Run<img src="http://www.radiobilly.com/wp-content/themes/radiobilly/img/play-white.png"></p>
     </div>
 
-    <div class="commit-button">
+    <div class="commit-button", id="commit-button">
       <p>Commit</p> 
     </div>
 </div>
 
-<script src="//raw.githubusercontent.com/caolan/async/master/lib/async.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/static/js/underscore.js"></script>
+<script src="/static/js/backbone.js"></script>
+<script src="/static/js/handlebars.js"></script>
 <script src="/static/js/async.js"></script>
-<script src="/static/js/listCollapse.js"></script>
+<script src="/static/js/listcollapse.js"></script>
 <script src="/static/ace/ace.js"></script>
 <script src="/static/ace/ext-themelist.js"></script>
+
+<script id="repos-list-template" type="text/x-handlebars-template">
+  {{#each repositories}}
+    <li><a href="#{{id}}">Project #{{@index}}</a></li>
+  {{/each}}
+{{!--   <li><a href="">freya-on-a-mac</a></li>
+  
+  <li>hackerchat
+      <ul>
+        <li><a href="">filename.eorj</a></li>
+        <li><a href="">filename.name</a></li>
+        <li>noidea.js
+            <ul>
+            <li><a href="">filename.eorj</a></li>
+        <li><a href="">filename.name</a></li>
+        <li><a href="">noidea.js</a></li>
+     </ul>
+   </li>
+  </ul></li>
+
+  <li><a href="">PennAppsApps</a></li> --}}
+</script>
 
 <script>
 
 var dom = require("ace/lib/dom");
 
-//add command to all new editor instaces
-require("ace/commands/default_commands").commands.push({
-    name: "Toggle Fullscreen",
-    bindKey: "F11",
-    exec: function(editor) {
-      var fullScreen = dom.toggleCssClass(document.body, "fullScreen")
-      dom.setCssClass(editor.container, "fullScreen", fullScreen)
-      editor.setAutoScrollEditorIntoView(!fullScreen)
-      editor.resize()
-    }
-})
+// //add command to all new editor instaces
+// require("ace/commands/default_commands").commands.push({
+//     name: "Toggle Fullscreen",
+//     bindKey: "F11",
+//     exec: function(editor) {
+//       var fullScreen = dom.toggleCssClass(document.body, "fullScreen")
+//       dom.setCssClass(editor.container, "fullScreen", fullScreen)
+//       editor.setAutoScrollEditorIntoView(!fullScreen)
+//       editor.resize()
+//     }
+// })
 
 // create first editor
 var editor = ace.edit("editor");
@@ -132,21 +156,46 @@ var themes = require("ace/ext/themelist").themes.map(function(t){return t.theme}
 window.add = add;
 window.scroll = scroll;
 
-// lol state machine
-currentRepo = null;
-
-function listRepositories() {
+function listRepositories(callback) {
   $.ajax({
     type: "GET",
     url: '/repositories',
-    success: function (repositoriesJSON) {
-      repositories = JSON.parse(repositoriesJSON);
-      console.log(repositories);
+    success: function (repositories) {
+      callback(null, repositories)
     },
-    error: function (jqXHR, textStatus, errorThrown) {
-      console.log(textStatus);
-      alert(textStatus);
-    }
+    error: function (jqXHR, textStatus) {
+      callback(textStatus);
+    },
+    dataType: 'json'
+  });
+};
+
+function getRepo(id, callback) {
+  $.ajax({
+    type: "GET",
+    url: '/repositories/' + id,
+    success: function (arguments) {
+      console.log(arguments)
+      callback(null, repositories)
+    },
+    error: function (jqXHR, textStatus) {
+      callback(textStatus);
+    },
+    dataType: 'json'
+  });
+};
+
+function getRepoFile(id, path, callback) {
+  $.ajax({
+    type: "GET",
+    url: '/repositories/' + id + 'files/' + path,
+    success: function (repositories) {
+      callback(null, repositories)
+    },
+    error: function (jqXHR, textStatus) {
+      callback(textStatus);
+    },
+    dataType: 'json'
   });
 };
 
@@ -199,50 +248,128 @@ function addRepository(url, callback) {
     },
     success: function (response) {
       callback(null, response);
-      currentRepo = response.id;
     },
     dataType: 'json'
   });
 };
 
 
-$('#run-button').on('click', function (event) {
+var AppView = Backbone.View.extend({
+  el: 'body',
+  currentRepo: null,
+  repos: [],
 
-  if (!currentRepo) return;
+  events: {
+      "click #run-button": "run",
+      "click #clone-repository": "clone",
+      "click #commit-button": "commit",
+      // "click .button.delete": "destroy"
+  },
 
-  var button = $(event.target).children('p').first();
-  console.log($(event.target));
+  initialize: function () {
+    this.reposView = new ReposListView();
+    var that = this;
+    this.updateRepos(function() {
+      that.render();
+    });
+  },
 
-  $(event.target).addClass("run-active");
+  render: function() {
+    this.reposView.render();
+  },
 
-  button.text("building...");
+  updateRepos: function(callback) {
+    var that = this;
+    listRepositories(function (err, repos) {
+      if (err) return alert("SOMETHING TERRIBLE HAPPENED.");
+      that.repos = repos;
+      console.log("updateRepos() callback")
+      callback();
+    });
+  },
 
-  async.waterfall([
+  run: function (event) {
+    console.log('run() called')
+    if (!this.currentRepo) return;
 
-    function build(next) {
-      buildRepository(currentRepo, next);
-    },
+    var button = $(event.target).children('p').first();
 
-    function run(next) {
-      button.text("running...")
-      runRepository(currentRepo, next);
-    }
-  ], function done(err) {
-      if (err) {
-        console.log("ERR", err);
-        return;
+    $("#run-button").addClass("run-active");
+
+    button.text("building...");
+
+    var that = this;
+    async.waterfall([
+
+      function build(next) {
+        buildRepository(that.currentRepo, next);
+      },
+
+      function run(next) {
+        button.text("running...")
+        runRepository(that.currentRepo, next);
       }
-      button.text("stop")
-  });
+    ], function done(err) {
+        if (err) {
+          console.log("WATERFALL ERR", err);
+          return;
+        }
+        button.text("stop")
+    });
+  },
+
+  clone: function (event) {
+    var url = prompt("Enter Git URL, ex: https://github.com/org/repo.git");
+    addRepository(url, function (err, response) {
+      if (err) return alert(err);
+      console.log("clone successful:", response);
+    });
+  },
+
+  commit: function (event) {
+    alert("Commit not implemented!");
+  }
+
 });
 
+var ReposListView = Backbone.View.extend({
 
-window.onload = function () {
+  el: "#repos",
 
-  //choose one of these options
-  //option 2 - auto-child-collapse
-  compactMenu('projects', true, '&#128194');
-}
+  template: function(repos) {
+    var source = $("#repos-list-template").html();
+    return Handlebars.compile(source)({
+      repositories: repos
+    });
+  },
+
+  events: {
+    "click a": "open",
+    // "click .button.edit":   "openEditDialog",
+    // "click .button.delete": "destroy"
+  },
+
+  initialize: function() {
+  },
+
+  render: function() {
+    var html = this.template(window.appView.repos);
+    this.$el.html(html);
+    compactMenu('repos', true, '&#128194');
+  },
+
+  open: function(event) {
+    var target = $(event.target);
+    var id = target.attr('href').substring(1);
+    this.$("a").removeClass("active");
+    document.title = id;
+    target.addClass("active");
+    window.appView.currentRepo = id;
+  }
+
+});
+
+window.appView = new AppView();
 </script>
 </body>
 </html>
