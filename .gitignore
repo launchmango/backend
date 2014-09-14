@@ -29,3 +29,6 @@ _testmain.go
 
 # Extra
 gin-bin
+
+# Fuck OS X 
+.DS_Store

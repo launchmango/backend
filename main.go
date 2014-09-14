@@ -179,6 +179,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleRoot).Methods("GET")
+	r.HandleFunc("/app", handleApp).Methods("GET")
 	r.Handle("/repositories", handler(createRepo)).Methods("POST")
 	r.Handle("/repositories", handler(listRepos)).Methods("GET")
 	r.Handle("/repositories/{id}", handler(getRepo)).Methods("GET")
@@ -197,6 +198,15 @@ func main() {
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
 	file, err := os.Open("./index.html")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	io.Copy(w, file)
+}
+
+func handleApp(w http.ResponseWriter, r *http.Request) {
+	file, err := os.Open("./app.html")
 	if err != nil {
 		log.Println(err)
 		return
@@ -332,6 +342,7 @@ func runRepo(w http.ResponseWriter, r *http.Request) error {
 	cmd.Stderr = buf
 	cmd.Dir = id
 	err := cmd.Run()
+	log.Println(buf)
 	if err != nil {
 		return err
 	}
