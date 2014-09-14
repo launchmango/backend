@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="/static/reset.css" type="text/css" />
   <link rel="stylesheet" href="/static/style.css" type="text/css" />
 
+  <link rel="stylesheet" href="/static/animate.css" type="text/css" />
+
 <link rel="stylesheet" href="/static/popup/vex.css" />
   <link rel="stylesheet" href="/static/popup/vex-theme-os.css" />
 
@@ -364,7 +366,7 @@ var AppView = Backbone.View.extend({
       },
 
       function run(info, next) {
-        $('#sim-container').show();
+        $('#sim-container').show().addClass('animated bounceOutLeft');
         button.text("running...")
         runRepository(that.currentRepo, next);
       }
