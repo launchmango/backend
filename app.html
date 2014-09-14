@@ -12,7 +12,7 @@
 </head>
 <body>
   <div class="sidebar">
-      <h2>Projects</h2><div class="add-files"><a class="plus" href="">+</a></div>
+      <h2>Projects</h2><div class="add-files"><a class="plus" id="clone-repository" href="">+</a></div>
 
          <ul id="repos">
             <li><a href="">freya-on-a-mac</a></li>
@@ -94,6 +94,10 @@
 <script id="repos-list-template" type="text/x-handlebars-template">
   {{#each repositories}}
     <li><a href="#{{id}}">Project #{{@index}}</a></li>
+    {{{recursiveBitch files}}}
+{{!--     {{#each files}}
+      <li><a href="#{{id}}">{{name}}</a></li>
+    {{/each}} --}}
   {{/each}}
 {{!--   <li><a href="">freya-on-a-mac</a></li>
   
@@ -114,21 +118,6 @@
 </script>
 
 <script>
-
-var dom = require("ace/lib/dom");
-
-// //add command to all new editor instaces
-// require("ace/commands/default_commands").commands.push({
-//     name: "Toggle Fullscreen",
-//     bindKey: "F11",
-//     exec: function(editor) {
-//       var fullScreen = dom.toggleCssClass(document.body, "fullScreen")
-//       dom.setCssClass(editor.container, "fullScreen", fullScreen)
-//       editor.setAutoScrollEditorIntoView(!fullScreen)
-//       editor.resize()
-//     }
-// })
-
 // create first editor
 var editor = ace.edit("editor");
 editor.setTheme("ace/theme/twilight");
@@ -179,6 +168,7 @@ function listRepositories(callback) {
     type: "GET",
     url: '/repositories',
     success: function (repositories) {
+      console.log(repositories)
       callback(null, repositories)
     },
     error: function (jqXHR, textStatus) {
@@ -192,9 +182,9 @@ function getRepo(id, callback) {
   $.ajax({
     type: "GET",
     url: '/repositories/' + id,
-    success: function (arguments) {
-      console.log(arguments)
-      callback(null, repositories)
+    success: function (repositories) {
+      console.log(arguments);
+      callback(null, repositories);
     },
     error: function (jqXHR, textStatus) {
       callback(textStatus);
@@ -258,7 +248,7 @@ function deleteRepository(id, callback) {
 
 function addRepository(url, callback) {
   $.ajax({
-    type: "POST",
+    type: 'POST',
     url: '/repositories',
     data: JSON.stringify({url: url}),
     error: function (jqXHR, textStatus) {
@@ -271,6 +261,59 @@ function addRepository(url, callback) {
   });
 };
 
+Handlebars.registerHelper('recursiveBitch', function(files) {
+  console.log("CALLED ONE TIME")
+  console.log(files)
+
+  // <ul>
+  //     <li><a href="">{{file.name}}</a></li>
+  //     <li><a href="">filename.name</a></li>
+  //     <li>noidea.js
+  //       <ul>
+  //         <li><a href="">filename.eorj</a></li>
+  //       </ul>
+  //     <li><a href="">filename.name</a></li>
+  //     <li><a href="">noidea.js</a></li>
+  // </ul>
+
+  function recurseDirectory(str, files) {
+    console.log('called');
+    str += "<ul>";
+    _.each(files, function (file) {
+      console.log(file);
+      str += "<li>";
+      if (file.type === 'file') {
+        console.log(file.name, "is a file");
+        str += "<a href='#'>" + file.name + '</a>';
+      } else {
+        console.log(file.name, "is a directory");
+        str += "<a href='#'>" + '> ' + file.name + '</a>';
+        // console.log(recurseDirectory(str, file.children));
+      }
+      str += "</li></a>"
+    });
+    return str + "</ul>";
+  }
+
+  return recurseDirectory("", files.children);
+
+
+  // str = "";
+  // str += "<ul>";
+  // _.each(files.children, function (file) {
+  //   str += "<li><a>";
+  //   console.log(file);
+  //   if (file.type === 'file') {
+  //     console.log(file.name, "is a file");
+  //   } else {
+  //     console.log(file.name, "is a directory");
+  //     // recurse(file.children)
+  //   }
+  //   str += "</li></a>"
+  // });
+  // str += "</ul>";
+
+});
 
 var AppView = Backbone.View.extend({
   el: 'body',
@@ -329,6 +372,9 @@ var AppView = Backbone.View.extend({
       }
     ], function done(err) {
         if (err) {
+          button.text("build failed");
+          $("#run-button").removeClass("*");
+          $("#run-button").addClass("build-fail");
           console.log("WATERFALL ERR", err);
           return;
         }
@@ -342,6 +388,7 @@ var AppView = Backbone.View.extend({
       if (err) return alert(err);
       console.log("clone successful:", response);
     });
+    return false;
   },
 
   commit: function (event) {
