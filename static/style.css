@@ -43,6 +43,7 @@ div.console-output {
         /*height:93vh;*/        
         height:93vh;
         bottom: 0;
+        z-index: 0;
     }
 
     .superbad {
@@ -298,68 +299,48 @@ div.console-output {
             background:#189F4D;
             }
 
-            #simulator {
-              width: 800px;
-              height: 640px;
-              z-index: 200;
-              position: absolute;
-              bottom: 25px;
-              right: 30px;
+            .delete-repo {
+                display:none;
+                float: right;
+                color: black;
+                padding:0px 4px;
             }
 
-            #iphone {
-              width:300px;
-              z-index:300;
-              position:absolute;
-              bottom:25px;
-              right:30px;
-              /*display:none;*/
+            li:hover .delete-repo {
+                display:inline;
+            }
+                .delete-repo:hover {
+                     color: #C63B19;
+                }
+
+#sim-container {
+    display:none;
+}
+
+    #iphone {
+        width: 377px;
+       z-index: 1200;
+       position: absolute;
+       bottom: 20px;
+       right: 50px;
+    }
+            #simulator {
+              width: 320px;
+              height: 480px;
+              z-index: 1300;
+              position: absolute;
+              bottom: 146px;
+              right: 75px;
             }
 
             #dismiss {
-              width:30px;
-              right:28px;
-              bottom:570px;
-              position:absolute;
-              z-index:400;
-              /*display:none;*/
+            width: 35px;
+            right: 370px;
+            bottom: 687px;
+            position: absolute;
+            z-index: 1400;
             }
 
             #dismiss:hover {
               cursor:pointer;
             }
-
-        .fadeInRight {
-              -webkit-animation-name: fadeInRight;
-                      animation-name: fadeInRight;
-            }
-
-            @-webkit-keyframes fadeInRightBig {
-              0% {
-                opacity: 0;
-                -webkit-transform: translate3d(2000px, 0, 0);
-                        transform: translate3d(2000px, 0, 0);
-              }
-
-              100% {
-                opacity: 1;
-                -webkit-transform: none;
-                        transform: none;
-              }
-            }
-
-            @keyframes fadeInRightBig {
-              0% {
-                opacity: 0;
-                -webkit-transform: translate3d(2000px, 0, 0);
-                        transform: translate3d(2000px, 0, 0);
-              }
-
-              100% {
-                opacity: 1;
-                -webkit-transform: none;
-                        transform: none;
-              }
-            }
-
-

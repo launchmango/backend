@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="/static/reset.css" type="text/css" />
   <link rel="stylesheet" href="/static/style.css" type="text/css" />
 
+  <link rel="stylesheet" href="/static/animate.css" type="text/css" />
+
 <link rel="stylesheet" href="/static/popup/vex.css" />
   <link rel="stylesheet" href="/static/popup/vex-theme-os.css" />
 
@@ -43,10 +45,22 @@
     </div>
 </div>
 
-<iframe id="simulator" src="http://plato.hackedu.us:8080/guacamole/client.xhtml?id=c%2Favi" class="animated" autofocus>
+<div id="sim-container">
   <img id="iphone" src="/static/iphone2.png">
   <img id="dismiss" src="/static/x.png">
+  <iframe id="simulator" src="http://plato.hackedu.us:8080/guacamole/client.xhtml?id=c%2Favi" class="animated" autofocus>
+   <div id="blackbox" style="
+    height: 488px;
+    position: absolute;
+    z-index: 300;
+    width: 320px;
+    background: black;
+    right: 75px;
+    bottom: 138px;
+"></div>
 </iframe>
+</div>
+
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script src="/static/vex/js/vex.combined.min.js"></script>
@@ -62,7 +76,7 @@
 
 <script id="repos-list-template" type="text/x-handlebars-template">
   {{#each repositories}}
-    <li><a href="#{{id}}">{{name}}</a></li>
+    <li><a href="#{{id}}">{{name}}<span class="delete-repo">✖</span></a></li>
     {{{recursiveBitch files}}}
 {{!--     {{#each files}}
       <li><a href="#{{id}}">{{name}}</a></li>
@@ -117,12 +131,6 @@ function add() {
     theme: theme,
     autoScrollEditorIntoView: true
   })
-
-  editor.setValue([
-    "this is editor number: ", count, "\n",
-    "using theme \"", theme, "\"\n",
-    ":)"
-  ].join(""), -1)
 
   scroll()
 }
@@ -350,9 +358,6 @@ var AppView = Backbone.View.extend({
 
     $("#run-button").addClass("run-active");
 
-    $('#iphone').show();
-    $('#dismiss').show();
-
     button.text("building...");
     $("#run-button").find('img').hide();
 
@@ -364,6 +369,7 @@ var AppView = Backbone.View.extend({
       },
 
       function run(info, next) {
+        $('#sim-container').show().addClass('animated fadeInRight');
         button.text("running...")
         runRepository(that.currentRepo, next);
       }
@@ -388,13 +394,8 @@ var AppView = Backbone.View.extend({
     console.log('dismiss() called')
     if (!this.currentRepo) return;
 
-    $('#dismiss').hide();
-    $('#iphone').hide();
-    $("#run-button").removeClass("run-active");
-    $("#run-button").removeClass("build-fail");
+    $('#sim-container').hide();
     this.resetRunButton();
-
-
   },
 
 
@@ -455,6 +456,7 @@ var ReposListView = Backbone.View.extend({
 
   events: {
     "click a": "open",
+    "click span.delete-repo": "delete"
     // "click .button.edit":   "openEditDialog",
     // "click .button.delete": "destroy"
   },
@@ -468,8 +470,24 @@ var ReposListView = Backbone.View.extend({
     compactMenu('repos', true, '&#128194');
   },
 
+  delete: function (event) {
+    window.thing = $(event.target);
+    var id = thing.parent().attr('href').substring(1);
+    console.log(thing);
+    var that = this;
+    deleteRepository(id, function (err) {
+      if (err) alert("Delete failed!")
+        appView.updateRepos(function() {
+          appView.render();
+        });
+    })
+
+  },
+
   open: function(event) {
     var target = $(event.target);
+    if (target.is('span')) return;
+    // console.log(target.);
     var id = target.attr('href').substring(1);
 
     console.log(id);
@@ -499,20 +517,6 @@ if ('ontouchstart' in document) {
 window.appView = new AppView();
 
 vex.defaultOptions.className = 'vex-theme-os';
-
-function animationClick(element, animation){
-    element = $('#app');
-    element.click(
-        function() {
-            element.addClass('animated ' + 'fadeInRight');        
-            //wait for animation to finish before removing classes
-            window.setTimeout( function(){
-                element.removeClass('animated ' + 'fadeInRight');
-            }, 2000);         
-  
-        });
-}
-
 
 </script>
 </body>
