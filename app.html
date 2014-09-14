@@ -366,7 +366,7 @@ var AppView = Backbone.View.extend({
       },
 
       function run(info, next) {
-        $('#sim-container').show().addClass('animated bounceOutLeft');
+        $('#sim-container').show().addClass('animated fadeInRight');
         button.text("running...")
         runRepository(that.currentRepo, next);
       }
@@ -514,20 +514,6 @@ if ('ontouchstart' in document) {
 window.appView = new AppView();
 
 vex.defaultOptions.className = 'vex-theme-os';
-
-function animationClick(element, animation){
-    element = $('#app');
-    element.click(
-        function() {
-            element.addClass('animated ' + 'fadeInRight');        
-            //wait for animation to finish before removing classes
-            window.setTimeout( function(){
-                element.removeClass('animated ' + 'fadeInRight');
-            }, 2000);         
-  
-        });
-}
-
 
 </script>
 </body>
