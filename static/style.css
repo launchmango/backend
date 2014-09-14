@@ -313,12 +313,11 @@ div.console-output {
                 }
 
     #iphone {
-        width:300px;
+        width:400px;
         z-index:300;
         position:absolute;
         bottom:25px;
-        right:30px;
-        display:none;
+        right:-30px;
     }
             #simulator {
               width: 320px;
@@ -327,14 +326,6 @@ div.console-output {
               position: absolute;
               bottom: 25px;
               right: 30px;
-            }
-            #iphone {
-              width:300px;
-              z-index:300;
-              position:absolute;
-              bottom:25px;
-              right:30px;
-              /*display:none;*/
             }
 
             #dismiss {
