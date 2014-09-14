@@ -222,6 +222,7 @@
                 text-align:right;
                 width:100%;       
                  padding-top:15px;
+                 font-size:23px;
 
             }
 
@@ -229,8 +230,14 @@
                 color:white;
                 text-decoration:none;
                 opacity:0.5;
-                padding:10px 20px;
-             }
+                padding:10px 30px;
+                }             
+
+                .add-files a.plus:hover {
+                    background:#189F4D;
+                    color:white;
+                    opacity:1;
+                }
 
 /*----- Add menu ------------*/
 
