@@ -62,7 +62,7 @@
 
 <script id="repos-list-template" type="text/x-handlebars-template">
   {{#each repositories}}
-    <li><a href="#{{id}}">{{name}}</a></li>
+    <li><a href="#{{id}}">{{name}}<span class="delete-repo">✖</span></a></li>
     {{{recursiveBitch files}}}
 {{!--     {{#each files}}
       <li><a href="#{{id}}">{{name}}</a></li>
@@ -350,9 +350,6 @@ var AppView = Backbone.View.extend({
 
     $("#run-button").addClass("run-active");
 
-    $('#iphone').show();
-    $('#dismiss').show();
-
     button.text("building...");
     $("#run-button").find('img').hide();
 
@@ -364,6 +361,8 @@ var AppView = Backbone.View.extend({
       },
 
       function run(info, next) {
+        $('#iphone').show();
+        $('#dismiss').show();
         button.text("running...")
         runRepository(that.currentRepo, next);
       }
@@ -455,6 +454,7 @@ var ReposListView = Backbone.View.extend({
 
   events: {
     "click a": "open",
+    "click span.delete-repo": "delete"
     // "click .button.edit":   "openEditDialog",
     // "click .button.delete": "destroy"
   },
@@ -468,8 +468,24 @@ var ReposListView = Backbone.View.extend({
     compactMenu('repos', true, '&#128194');
   },
 
+  delete: function (event) {
+    window.thing = $(event.target);
+    var id = thing.parent().attr('href').substring(1);
+    console.log(thing);
+    var that = this;
+    deleteRepository(id, function (err) {
+      if (err) alert("Delete failed!")
+        appView.updateRepos(function() {
+          appView.render();
+        });
+    })
+
+  },
+
   open: function(event) {
     var target = $(event.target);
+    if (target.is('span')) return;
+    // console.log(target.);
     var id = target.attr('href').substring(1);
 
     console.log(id);
