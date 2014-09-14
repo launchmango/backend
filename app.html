@@ -59,7 +59,7 @@
     </div>
 
     <div class="run-button" id="run-button">
-      <p>Run<img src="http://www.radiobilly.com/wp-content/themes/radiobilly/img/play-white.png"></p>
+      <p><span>Run</span><img src="http://www.radiobilly.com/wp-content/themes/radiobilly/img/play-white.png"></p>
     </div>
 
     <div class="commit-button", id="commit-button">
@@ -326,6 +326,8 @@ var AppView = Backbone.View.extend({
   },
 
   render: function() {
+    $("#run-button").removeClass("build-fail");
+    $("#run-button").children('p').first().text("run")
     this.reposView.render();
   },
 
