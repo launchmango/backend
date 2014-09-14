@@ -30,9 +30,15 @@
         position:absolute;
         margin-left:300px;
         top:70px;
-        height:calc(100vh - 70px);
+        /*height:calc(100vh - 70px);*/
+        /*height:93vh;*/        
+        height:93vh;
+        bottom: 0;
     }
 
+    .superbad {
+        height:calc(100vh - 70px);
+    }
 
     /*----- sidebar ------------*/
 
@@ -59,11 +65,6 @@
          color:white;
          text-decoration:none;
          position:fixed;
-    }
-
-        
-
-    #filenames {
     }
 
 
@@ -128,7 +129,7 @@
             background:#232323;
          }
            
-           ul li a:hover {
+           .no-touch ul li a:hover {
             background:rgb(145,145,145);
          }
 

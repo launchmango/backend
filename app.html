@@ -10,26 +10,11 @@
   <link rel="stylesheet" href="/static/style.css" type="text/css" />
 
 </head>
-<body>
+<body class="no-touch">
   <div class="sidebar">
       <h2>Projects</h2><div class="add-files"><a class="plus" id="clone-repository" href="">+</a></div>
 
-         <ul id="repos">
-            <li><a href="">freya-on-a-mac</a></li>
-            
-            <li >hackerchat
-                <ul>
-                <li><a href="">filename.eorj</a></li>
-                <li><a href="">filename.name</a></li>
-                <li>noidea.js
-                    <ul>
-                    <li><a href="">filename.eorj</a></li>
-                <li><a href="">filename.name</a></li>
-                <li><a href="">noidea.js</a></li>
-               </ul></li>
-              </ul></li>
-                <li><a href="">PennAppsApps</a></li>
-          </ul>
+         <ul id="repos"></ul>
 
        <a href="/"><div class="log-out"><h2>Log out</h2></div></a>
     </div>
@@ -263,8 +248,8 @@ function addRepository(url, callback) {
 };
 
 Handlebars.registerHelper('recursiveBitch', function(files) {
-  console.log("CALLED ONE TIME");
-  console.log(files);
+  // console.log("CALLED ONE TIME");
+  // console.log(files);
 
   // <ul>
   //     <li><a href="">{{file.name}}</a></li>
@@ -278,16 +263,16 @@ Handlebars.registerHelper('recursiveBitch', function(files) {
   // </ul>
 
   function recurseDirectory(str, files) {
-    console.log('called');
+    // console.log('called');
     str += "<ul>";
     _.each(files, function (file) {
-      console.log(file);
+      // console.log(file);
       str += "<li>";
       if (file.type === 'file') {
-        console.log(file.name, "is a file");
+        // console.log(file.name, "is a file");
         str += "<a href='#'>" + file.name + '</a>';
       } else {
-        console.log(file.name, "is a directory");
+        // console.log(file.name, "is a directory");
         str += "<a href='#'>" + '> ' + file.name + '</a>';
         // console.log(recurseDirectory(str, file.children));
       }
@@ -354,11 +339,11 @@ var AppView = Backbone.View.extend({
     });
   },
 
-  run: function (event) {
+  run: function () {
     console.log('run() called')
     if (!this.currentRepo) return;
 
-    var button = $(event.target).children('p').first();
+    var button = $("#run-button").children('p').first();
 
     $("#run-button").addClass("run-active");
 
@@ -387,7 +372,7 @@ var AppView = Backbone.View.extend({
     });
   },
 
-  clone: function (event) {
+  clone: function () {
     var url = prompt("Enter Git URL, ex: https://github.com/org/repo.git");
     addRepository(url, function (err, response) {
       if (err) return alert(err);
@@ -396,7 +381,7 @@ var AppView = Backbone.View.extend({
     return false;
   },
 
-  commit: function (event) {
+  commit: function () {
     alert("Commit not implemented!");
   },
 
@@ -442,6 +427,10 @@ var ReposListView = Backbone.View.extend({
   }
 
 });
+
+if ('ontouchstart' in document) {
+  $('body').removeClass('no-touch');
+}
 
 window.appView = new AppView();
 </script>
