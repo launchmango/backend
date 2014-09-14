@@ -43,6 +43,7 @@ div.console-output {
         /*height:93vh;*/        
         height:93vh;
         bottom: 0;
+        z-index: 0;
     }
 
     .superbad {
@@ -334,11 +335,10 @@ div.console-output {
 
             #dismiss {
             width: 35px;
-             right: 64px;
-             bottom: 799px;
-             position: absolute;
-             z-index: 1400;
-              /*display:none;*/
+            right: 370px;
+            bottom: 687px;
+            position: absolute;
+            z-index: 1400;
             }
 
             #dismiss:hover {

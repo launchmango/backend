@@ -49,6 +49,15 @@
   <img id="iphone" src="/static/iphone2.png">
   <img id="dismiss" src="/static/x.png">
   <iframe id="simulator" src="http://plato.hackedu.us:8080/guacamole/client.xhtml?id=c%2Favi" class="animated" autofocus>
+   <div id="blackbox" style="
+    height: 488px;
+    position: absolute;
+    z-index: 300;
+    width: 320px;
+    background: black;
+    right: 75px;
+    bottom: 138px;
+"></div>
 </iframe>
 </div>
 
@@ -122,12 +131,6 @@ function add() {
     theme: theme,
     autoScrollEditorIntoView: true
   })
-
-  editor.setValue([
-    "this is editor number: ", count, "\n",
-    "using theme \"", theme, "\"\n",
-    ":)"
-  ].join(""), -1)
 
   scroll()
 }
