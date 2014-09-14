@@ -76,29 +76,24 @@
 
 <script id="repos-list-template" type="text/x-handlebars-template">
   {{#each repositories}}
-    <li><a href="#{{id}}">{{name}}<span class="delete-repo">✖</span></a></li>
-    {{{recursiveBitch files}}}
-{{!--     {{#each files}}
-      <li><a href="#{{id}}">{{name}}</a></li>
-    {{/each}} --}}
+    <li><a href="#{{id}}">{{name}}<span class="delete-repo">✖</span></a>
+    </li>
+    <ul>
+    {{#each files.children}}
+      <li><a href="#{{url}}" class="directory">{{name}}</a></li>
+    {{/each}}
+    </ul>
   {{/each}}
-{{!--   <li><a href="">freya-on-a-mac</a></li>
-  
-  <li>hackerchat
-      <ul>
-        <li><a href="">filename.eorj</a></li>
-        <li><a href="">filename.name</a></li>
-        <li>noidea.js
-            <ul>
-            <li><a href="">filename.eorj</a></li>
-        <li><a href="">filename.name</a></li>
-        <li><a href="">noidea.js</a></li>
-     </ul>
-   </li>
-  </ul></li>
-
-  <li><a href="">PennAppsApps</a></li> --}}
 </script>
+
+<script id="files-list-template" type="text/x-handlebars-template">
+  <ul>
+  {{#each files}}
+    <li><a href="#{{id}}" class="directory">{{name}}</a></li>
+  {{/each}}
+  </ul>
+</script>
+
 
 <script>
 // create first editor
@@ -250,12 +245,15 @@ var entityMap = {
     "/": '&#x2F;'
   };
 
-
 function escapeHtml(string) {
   return String(string).replace(/[&<>"'\/]/g, function (s) {
     return entityMap[s];
   });
 }
+
+Handlebars.registerHelper('isDir', function(file) {
+  return file.type === 'dir';
+});
 
 Handlebars.registerHelper('recursiveBitch', function(files) {
   // console.log("CALLED ONE TIME");
@@ -272,26 +270,29 @@ Handlebars.registerHelper('recursiveBitch', function(files) {
   //     <li><a href="">noidea.js</a></li>
   // </ul>
 
-  function recurseDirectory(str, files) {
-    // console.log('called');
-    str += "<ul>";
-    _.each(files, function (file) {
-      // console.log(file);
-      str += "<li>";
-      if (file.type === 'file') {
-        // console.log(file.name, "is a file");
-        str += "<a href='#" + file.url + "'>" + file.name + '</a>';
-      } else {
-        // console.log(file.name, "is a directory");
-        str += "<a href='#" + file.url + "'>" + '> ' + file.name + '</a>';
-        // console.log(recurseDirectory(str, file.children));
-      }
-      str += "</li></a>";
-    });
-    return str + "</ul>";
-  }
+  // function recurseDirectory(str, n, files) {
+  //   if (n > 10) { return ""; }
+  //   // console.log('called');
+  //   str += "<ul>";
+  //   _.each(files, function (file) {
+  //     // console.log(file);
+  //     str += "<li>";
+  //     if (file.type === 'file') {
+  //       // console.log(file.name, "is a file");
+  //       str += "<a href='#" + file.url + "'>" + file.name + '</a>';
+  //     } else {
+  //       // console.log(file.name, "is a directory");
+  //       str += "<a href='#" + file.url + "'>" + file.name + '</a>';
+  //       // str += "<a href='#" + file.url + "'>" + '> ' + file.name + '</a>';
+  //       console.log(str);
+  //       str += recurseDirectory(str, ++n, file.children);
+  //     }
+  //     str += "</li></a>";
+  //   });
+  //   return str + "</ul>";
+  // }
 
-  return recurseDirectory("", files.children);
+  return recurseDirectory("", 0, files.children);
 
 });
 
@@ -381,8 +382,7 @@ var AppView = Backbone.View.extend({
             contentClassName: "console-output"
           });
           button.text("build failed");
-          $("#run-button").removeClass("*");
-          $("#run-button").addClass("build-fail");
+          that.resetRunButton();
           console.log("WATERFALL ERR", err);
           return;
         }
@@ -447,6 +447,13 @@ var ReposListView = Backbone.View.extend({
 
   el: "#repos",
 
+  filesTemplate: function(files) {
+    var source = $("#files-list-template").html();
+    return Handlebars.compile(source)({
+      files: files
+    });
+  },
+
   template: function(repos) {
     var source = $("#repos-list-template").html();
     return Handlebars.compile(source)({
@@ -456,8 +463,8 @@ var ReposListView = Backbone.View.extend({
 
   events: {
     "click a": "open",
-    "click span.delete-repo": "delete"
-    // "click .button.edit":   "openEditDialog",
+    "click span.delete-repo": "delete",
+    "click .directory":   "expandDirectory",
     // "click .button.delete": "destroy"
   },
 
@@ -482,6 +489,12 @@ var ReposListView = Backbone.View.extend({
         });
     })
 
+  },
+
+  expandDirectory: function(event) {
+    var target = $(event.target);
+    var id = target.attr('href').substring(1);
+    console.log(id);
   },
 
   open: function(event) {
