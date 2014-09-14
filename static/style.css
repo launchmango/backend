@@ -312,6 +312,10 @@ div.console-output {
                      color: #C63B19;
                 }
 
+#sim-container {
+    display:none;
+}
+
     #iphone {
         width: 377px;
        z-index: 200;
