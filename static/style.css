@@ -43,7 +43,7 @@ div.console-output {
         /*height:93vh;*/        
         height:93vh;
         bottom: 0;
-        z-index: 0;
+        z-index: 3;
     }
 
     .superbad {
@@ -314,31 +314,36 @@ div.console-output {
                 }
 
 #sim-container {
-    display:none;
+     z-index: -23982;
 }
 
     #iphone {
         width: 377px;
-       z-index: 1200;
        position: absolute;
-       bottom: 20px;
+       bottom: 30px;
        right: 50px;
     }
             #simulator {
               width: 320px;
               height: 480px;
-              z-index: 1300;
               position: absolute;
               bottom: 146px;
               right: 75px;
             }
+
+                .zup {
+                    z-index:1500;
+                     transition: all .3s;
+            -moz-transition: all .3s; /* Firefox 4 */
+         -webkit-transition: all .3s; /* Safari and Chrome */
+         -o-transition: all .3s; /* Opera */
+                }
 
             #dismiss {
             width: 35px;
             right: 370px;
             bottom: 687px;
             position: absolute;
-            z-index: 1400;
             }
 
             #dismiss:hover {

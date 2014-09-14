@@ -370,7 +370,9 @@ var AppView = Backbone.View.extend({
       },
 
       function run(info, next) {
-        $('#sim-container').show().addClass('animated fadeInRight');
+        $('#iphone').show().addClass('zup');
+        $('iframe').show().addClass('zup');
+        $('#dismiss').show().addClass('zup');
         button.text("running...")
         runRepository(that.currentRepo, next);
       }
