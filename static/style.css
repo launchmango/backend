@@ -314,7 +314,7 @@ div.console-output {
 
     #iphone {
         width: 377px;
-       z-index: 300;
+       z-index: 200;
        position: absolute;
        bottom: 50px;
        right: 50px;
@@ -322,7 +322,7 @@ div.console-output {
             #simulator {
               width: 320px;
               height: 480px;
-              z-index: 200;
+              z-index: 300;
               position: absolute;
               bottom: 166px;
               right: 75px;
