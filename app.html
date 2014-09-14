@@ -86,6 +86,7 @@
 <script src="/static/js/underscore.js"></script>
 <script src="/static/js/backbone.js"></script>
 <script src="/static/js/handlebars.js"></script>
+<script src="/static/js/moment.js"></script>
 <script src="/static/js/async.js"></script>
 <script src="/static/js/listcollapse.js"></script>
 <script src="/static/ace/ace.js"></script>
@@ -93,7 +94,7 @@
 
 <script id="repos-list-template" type="text/x-handlebars-template">
   {{#each repositories}}
-    <li><a href="#{{id}}">Project #{{@index}}</a></li>
+    <li><a href="#{{id}}">{{name}}</a></li>
     {{{recursiveBitch files}}}
 {{!--     {{#each files}}
       <li><a href="#{{id}}">{{name}}</a></li>
@@ -262,8 +263,8 @@ function addRepository(url, callback) {
 };
 
 Handlebars.registerHelper('recursiveBitch', function(files) {
-  console.log("CALLED ONE TIME")
-  console.log(files)
+  console.log("CALLED ONE TIME");
+  console.log(files);
 
   // <ul>
   //     <li><a href="">{{file.name}}</a></li>
@@ -318,6 +319,7 @@ Handlebars.registerHelper('recursiveBitch', function(files) {
 var AppView = Backbone.View.extend({
   el: 'body',
   currentRepo: null,
+  lastSaved: moment(),
   repos: [],
 
   events: {
@@ -333,6 +335,9 @@ var AppView = Backbone.View.extend({
     this.updateRepos(function() {
       that.render();
     });
+    setInterval(function () {
+      that.updateSavedAt();
+    }, 2500);
   },
 
   render: function() {
@@ -393,6 +398,10 @@ var AppView = Backbone.View.extend({
 
   commit: function (event) {
     alert("Commit not implemented!");
+  },
+
+  updateSavedAt: function () {
+    $(".update > p").text("last saved " + this.lastSaved.from(moment()));
   }
 
 });
