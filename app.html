@@ -9,6 +9,10 @@
   <link rel="stylesheet" href="/static/reset.css" type="text/css" />
   <link rel="stylesheet" href="/static/style.css" type="text/css" />
 
+<link rel="stylesheet" href="/static/vex/css/vex.css" />
+  <link rel="stylesheet" href="/static/vex/css/vex-theme-os.css" />
+
+
 </head>
 <body class="no-touch">
   <div class="sidebar">
@@ -68,6 +72,8 @@
 </div>
 
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/static/vex/js/vex.combined.min.js"></script>
+
 <script src="/static/js/underscore.js"></script>
 <script src="/static/js/backbone.js"></script>
 <script src="/static/js/handlebars.js"></script>
@@ -375,11 +381,19 @@ var AppView = Backbone.View.extend({
   },
 
   clone: function () {
-    var url = prompt("Enter Git URL, ex: https://github.com/org/repo.git");
-    addRepository(url, function (err, response) {
-      if (err) return alert(err);
-      console.log("clone successful:", response);
+    vex.dialog.prompt({
+      message: 'Enter Git URL for your project.',
+      placeholder: 'ex: https://github.com/org/repo.git',
+      callback: function(url) {
+        console.log(url);
+        addRepository(url, function (err, response) {
+          if (err) return console.log(err);
+          console.log("clone successful:", response);
+        });
+      }
     });
+    // var url = prompt("Enter Git URL, ex: https://github.com/org/repo.git");
+
     return false;
   },
 
@@ -435,6 +449,8 @@ if ('ontouchstart' in document) {
 }
 
 window.appView = new AppView();
+
+vex.defaultOptions.className = 'vex-theme-os';
 </script>
 </body>
 </html>
