@@ -320,19 +320,35 @@ div.console-output {
         right:30px;
         display:none;
     }
+            #simulator {
+              width: 800px;
+              height: 640px;
+              z-index: 200;
+              position: absolute;
+              bottom: 25px;
+              right: 30px;
+            }
+            #iphone {
+              width:300px;
+              z-index:300;
+              position:absolute;
+              bottom:25px;
+              right:30px;
+              /*display:none;*/
+            }
 
-        #dismiss {
-            width:30px;
-            right:28px;
-            bottom:570px;
-            position:absolute;
-            z-index:400;
-            display:none;
-        }
+            #dismiss {
+              width:30px;
+              right:28px;
+              bottom:570px;
+              position:absolute;
+              z-index:400;
+              /*display:none;*/
+            }
 
-        #dismiss:hover {
-            cursor:pointer;
-        }
+            #dismiss:hover {
+              cursor:pointer;
+            }
 
         .fadeInRight {
               -webkit-animation-name: fadeInRight;
