@@ -205,7 +205,7 @@
             background:#C63B19;
         }
 
-        .build-fail:hover {
+        .no-touch .build-fail:hover {
             background:#C63B19;
         }
 
@@ -287,6 +287,61 @@
             .add-menu a:hover {
                    color: white;
             background:#189F4D;
+            }
+
+    #iphone {
+        width:300px;
+        z-index:300;
+        position:absolute;
+        bottom:25px;
+        right:30px;
+        display:none;
+    }
+
+        #dismiss {
+            width:30px;
+            right:28px;
+            bottom:570px;
+            position:absolute;
+            z-index:400;
+            display:none;
+        }
+
+        #dismiss:hover {
+            cursor:pointer;
+        }
+
+        .fadeInRight {
+              -webkit-animation-name: fadeInRight;
+                      animation-name: fadeInRight;
+            }
+
+            @-webkit-keyframes fadeInRightBig {
+              0% {
+                opacity: 0;
+                -webkit-transform: translate3d(2000px, 0, 0);
+                        transform: translate3d(2000px, 0, 0);
+              }
+
+              100% {
+                opacity: 1;
+                -webkit-transform: none;
+                        transform: none;
+              }
+            }
+
+            @keyframes fadeInRightBig {
+              0% {
+                opacity: 0;
+                -webkit-transform: translate3d(2000px, 0, 0);
+                        transform: translate3d(2000px, 0, 0);
+              }
+
+              100% {
+                opacity: 1;
+                -webkit-transform: none;
+                        transform: none;
+              }
             }
 
 

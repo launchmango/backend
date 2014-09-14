@@ -43,6 +43,11 @@
     </div>
 </div>
 
+<div id="app" class="animated">
+  <img id="iphone" src="/static/iphone2.png">
+  <img id="dismiss" src="/static/x.png">
+</div>
+
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script src="/static/vex/js/vex.combined.min.js"></script>
 
@@ -278,6 +283,7 @@ var AppView = Backbone.View.extend({
       "click #run-button": "run",
       "click #clone-repository": "clone",
       "click #commit-button": "commit",
+      "click #dismiss": "dismiss",
       // "click .button.delete": "destroy"
   },
 
@@ -328,6 +334,9 @@ var AppView = Backbone.View.extend({
 
     $("#run-button").addClass("run-active");
 
+    $('#iphone').show();
+    $('#dismiss').show();
+
     button.text("building...");
     $("#run-button").find('img').hide();
 
@@ -353,6 +362,21 @@ var AppView = Backbone.View.extend({
     });
   },
 
+
+  dismiss: function () {
+    console.log('dismiss() called')
+    if (!this.currentRepo) return;
+
+    $('#dismiss').hide();
+    $('#iphone').hide();
+    $("#run-button").removeClass("run-active");
+    $("#run-button").removeClass("build-fail");
+    this.resetRunButton();
+
+
+  },
+
+
   clone: function () {
     var that = this;
     vex.dialog.prompt({
@@ -375,6 +399,7 @@ var AppView = Backbone.View.extend({
   commit: function () {
     alert("Commit not implemented!");
   },
+
 
   saveCurrentFile: function (callback) {
     var that = this;
@@ -453,6 +478,21 @@ if ('ontouchstart' in document) {
 window.appView = new AppView();
 
 vex.defaultOptions.className = 'vex-theme-os';
+
+function animationClick(element, animation){
+    element = $('#app');
+    element.click(
+        function() {
+            element.addClass('animated ' + 'fadeInRight');        
+            //wait for animation to finish before removing classes
+            window.setTimeout( function(){
+                element.removeClass('animated ' + 'fadeInRight');
+            }, 2000);         
+  
+        });
+}
+
+
 </script>
 </body>
 </html>
