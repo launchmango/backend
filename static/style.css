@@ -46,9 +46,13 @@
         font-weight:400;
         color:white;
         position: fixed;
-    overflow-y: scroll;
-    top: 70px;
-    bottom: 0;
+        overflow-y: scroll;
+        top: 70px;
+        bottom: 0;
+    }
+
+    #repos {
+        margin-bottom: 50%;
     }
 
     a h2 {
