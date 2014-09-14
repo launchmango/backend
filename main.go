@@ -41,6 +41,7 @@ type FileNode struct {
 
 type Repository struct {
 	ID    string    `json:"id"`
+	Name  string    `json:"name"`
 	URL   string    `json:"url"`
 	Files *FileNode `json:"files,omitempty"`
 }
@@ -129,7 +130,20 @@ func gitRemote(repoPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(u), nil
+	return strings.TrimSpace(string(u)), nil
+}
+
+func repoName(repoPath string) (string, error) {
+	remote, err := gitRemote(repoPath)
+	if err != nil {
+		return "", err
+	}
+
+	parts := strings.Split(remote, "/")
+	last := parts[len(parts)-1]
+	name := strings.TrimSuffix(last, ".git")
+
+	return name, nil
 }
 
 func loadRepoFiles(repo *Repository) {
@@ -258,12 +272,17 @@ func listRepos(w http.ResponseWriter, r *http.Request) error {
 	for _, fi := range fi {
 		if fi.Mode().IsDir() {
 			if regexpMD5.MatchString(fi.Name()) {
-				name, err := gitRemote(fi.Name())
+				remote, err := gitRemote(fi.Name())
 				if err != nil {
 					return err
 				}
 
-				repo := &Repository{ID: fi.Name(), URL: name}
+				name, err := repoName(fi.Name())
+				if err != nil {
+					return err
+				}
+
+				repo := &Repository{ID: fi.Name(), Name: name, URL: remote}
 				loadRepoFiles(repo)
 
 				repos = append(repos, repo)
@@ -280,12 +299,17 @@ func getRepo(w http.ResponseWriter, r *http.Request) error {
 		return errNotFound
 	}
 
-	name, err := gitRemote(id)
+	remote, err := gitRemote(id)
 	if err != nil {
 		return err
 	}
 
-	repo := Repository{ID: id, URL: name}
+	name, err := repoName(id)
+	if err != nil {
+		return err
+	}
+
+	repo := Repository{ID: id, Name: name, URL: remote}
 	loadRepoFiles(&repo)
 
 	renderJSON(w, http.StatusOK, &repo)
