@@ -316,7 +316,7 @@ var AppView = Backbone.View.extend({
       if (err) return alert("SOMETHING TERRIBLE HAPPENED.");
       that.repos = repos;
       console.log("updateRepos() callback")
-      callback();
+      callback && callback();
     });
   },
 
@@ -354,6 +354,7 @@ var AppView = Backbone.View.extend({
   },
 
   clone: function () {
+    var that = this;
     vex.dialog.prompt({
       message: 'Enter Git URL for your project.',
       placeholder: 'ex: https://github.com/org/repo.git',
@@ -362,11 +363,12 @@ var AppView = Backbone.View.extend({
         addRepository(url, function (err, response) {
           if (err) return console.log(err);
           console.log("clone successful:", response);
+          that.updateRepos(function() {
+            that.render();
+          });
         });
       }
     });
-    // var url = prompt("Enter Git URL, ex: https://github.com/org/repo.git");
-
     return false;
   },
 
