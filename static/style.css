@@ -316,16 +316,16 @@ div.console-output {
         width: 377px;
        z-index: 300;
        position: absolute;
-       bottom: -92px;
-       right: 5px;
+       bottom: 50px;
+       right: 50px;
     }
             #simulator {
               width: 320px;
               height: 480px;
               z-index: 200;
               position: absolute;
-              bottom: 25px;
-              right: 30px;
+              bottom: 166px;
+              right: 75px;
             }
 
             #dismiss {
