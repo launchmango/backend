@@ -343,7 +343,6 @@ var AppView = Backbone.View.extend({
           console.log("WATERFALL ERR", err);
           return;
         }
-        button.text("stop")
     });
   },
 
@@ -369,11 +368,11 @@ var AppView = Backbone.View.extend({
      success: function () {
        that.lastSaved = moment();
        $(".update > p").text("last saved " + that.lastSaved.from(moment()));
-       callback(null);
+       callback && callback(null);
      },
      error: function (jqXHR, textStatus) {
       $(".update > p").html("<span style='color:black; font-weight:bold'>Save failed</span>")
-       callback(textStatus);
+       callback && callback(textStatus);
      }
    });
   }
@@ -409,6 +408,8 @@ var ReposListView = Backbone.View.extend({
   open: function(event) {
     var target = $(event.target);
     var id = target.attr('href').substring(1);
+
+    console.log(id);
     this.$("a").removeClass("active");
     document.title = id;
     target.addClass("active");
@@ -419,6 +420,7 @@ var ReposListView = Backbone.View.extend({
         editor.setValue(data, -1);
       });
       appView.currentFilePath = id;
+      window.appView.currentRepo = id.split("/")[2]
     } else {
      window.appView.currentRepo = id;
     }
