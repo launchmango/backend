@@ -263,7 +263,10 @@ func listRepos(w http.ResponseWriter, r *http.Request) error {
 					return err
 				}
 
-				repos = append(repos, &Repository{ID: fi.Name(), URL: name})
+				repo := &Repository{ID: fi.Name(), URL: name}
+				loadRepoFiles(repo)
+
+				repos = append(repos, repo)
 			}
 		}
 	}
