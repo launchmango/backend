@@ -191,6 +191,11 @@
             background:#C63B19;
         }
 
+        .build-fail:hover {
+            background:#C63B19;
+        }
+
+
         .commit-button:hover {
             background:#D89A3C;
             cursor:pointer;
